@@ -1,0 +1,21 @@
+# Hermes bootstrap helper for Qwen2.5-Coder tool_choice=auto.
+# Applied with:
+#   oc create configmap hermes-coder-patch \
+#     --from-file=patch_coder_tool_json.py=lab/hermes/patch_coder_tool_json.py \
+#     -n <ns> --dry-run=client -o yaml | oc apply -f -
+# Mounted into /bootstrap by lab/hermes/deploy.yaml (projected volume).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hermes-coder-patch
+  namespace: remediation-pov
+  labels:
+    app: hermes-agent
+    app.kubernetes.io/part-of: remediation-pov
+immutable: false
+data:
+  # Placeholder — prefer --from-file apply (keeps the Python source unescaped).
+  README: |
+    Replace this ConfigMap with --from-file=patch_coder_tool_json.py=...
+    See lab/hermes/patch_coder_tool_json.py. Allowlist: list_findings, get_finding,
+    run_build, request_rescan, record_decision, run_recipe.

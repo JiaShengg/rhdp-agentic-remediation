@@ -1,0 +1,10 @@
+HEAD is now at 7d94047 lab workspace seed
+Removing target/
+Deleted branch fix/F-L001 (was 1ebf448).
+RESET_OK
+7d94047
+672:            <artifactId>api-ldap-model</artifactId>
+673-            <version>2.1.7</version>
+Switched to and reset branch 'main'
+error: branch 'fix/F-00024' not found
+error: branch 'origin/master' not found

@@ -1,0 +1,40 @@
+# Separate runtime. RHOAI vllm-cuda-runtime is vLLM 0.10.1.1.
+# The Qwen3.6-27B-FP8 model card requires vllm>=0.19.0.
+# Image: docker.io/vllm/vllm-openai:v0.19.1, linux/amd64 digest.
+# Leave vllm-cuda-runtime untouched.
+---
+apiVersion: serving.kserve.io/v1alpha1
+kind: ServingRuntime
+metadata:
+  name: vllm-qwen36
+  namespace: remediation-pov
+  annotations:
+    openshift.io/display-name: vLLM 0.19.1 for Qwen3.6
+  labels:
+    app.kubernetes.io/part-of: remediation-pov
+spec:
+  annotations:
+    prometheus.kserve.io/port: "8080"
+    prometheus.kserve.io/path: "/metrics"
+  supportedModelFormats:
+    - name: vLLM
+      version: "0.19.1"
+      autoSelect: false
+      priority: 1
+  containers:
+    - name: kserve-container
+      image: docker.io/vllm/vllm-openai@sha256:89c1d0629d377daa3f7f369cbea6167a7b48ea89aaacd12555e2b0b2f7f740d3
+      imagePullPolicy: IfNotPresent
+      command: ["vllm", "serve"]
+      args:
+        - --port=8080
+        - --model=/mnt/models
+        - --served-model-name={{.Name}}
+      env:
+        - name: HF_HOME
+          value: /tmp
+        - name: VLLM_USAGE_SOURCE
+          value: production-docker-image
+      ports:
+        - containerPort: 8080
+          protocol: TCP

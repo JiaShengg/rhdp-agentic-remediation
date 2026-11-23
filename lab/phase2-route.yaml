@@ -1,0 +1,25 @@
+# OPTIONAL / NOT APPLIED BY DEFAULT
+# Hermes uses the in-cluster Service. A public unauthenticated model Route
+# contradicts the POV access-control story.
+#
+# If you truly need an external OpenAI-compatible URL for debugging:
+#   1. Set security.opendatahub.io/enable-auth: "true" on the InferenceService
+#   2. Uncomment the Route below and oc apply -f lab/phase2-route.yaml
+#
+# ---
+# apiVersion: route.openshift.io/v1
+# kind: Route
+# metadata:
+#   name: qwen25-7b
+#   namespace: remediation-pov
+#   labels:
+#     app.kubernetes.io/part-of: remediation-pov
+# spec:
+#   to:
+#     kind: Service
+#     name: qwen25-7b-predictor
+#   port:
+#     targetPort: http
+#   tls:
+#     termination: edge
+#     insecureEdgeTerminationPolicy: Redirect

@@ -1,0 +1,5 @@
+⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
+
+session_id: local-75e235dc3899a1136b32b49fb66980e17ea17f832c32478e87f48a15e556c005
+Done. Recorded **TP** (true positive) for F-00011: untrusted HTTP header input flows unsanitized into `new File(param, "/Test.txt")`, allowing path traversal via the `param` parent directory argument.
+exit=0

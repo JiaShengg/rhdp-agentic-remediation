@@ -1,0 +1,14 @@
+⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
+
+session_id: local-76fc63afda5b800f583baf1131a5bf0efa5f76006bc2a0b600c352689f398fe2
+```json
+{
+  "name": "search_files",
+  "arguments": {
+    "pattern": "F-00147",
+    "target": "content",
+    "path": "."
+  }
+}
+```
+exit=0

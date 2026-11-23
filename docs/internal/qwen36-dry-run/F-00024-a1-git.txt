@@ -1,0 +1,30 @@
+--- status ---
+--- branch ---
+fix/F-00024
+--- log ---
+71652cc Fix F-00024: bind user input via PreparedStatement parameter
+7d94047 lab workspace seed
+--- branches ---
+* fix/F-00024 71652cc Fix F-00024: bind user input via PreparedStatement parameter
+  main        7d94047 lab workspace seed
+--- diff main ---
+ src/main/java/org/owasp/benchmark/testcode/BenchmarkTest00024.java | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+--- diff main patch ---
+diff --git a/src/main/java/org/owasp/benchmark/testcode/BenchmarkTest00024.java b/src/main/java/org/owasp/benchmark/testcode/BenchmarkTest00024.java
+index 69dd949..f8b28cb 100644
+--- a/src/main/java/org/owasp/benchmark/testcode/BenchmarkTest00024.java
++++ b/src/main/java/org/owasp/benchmark/testcode/BenchmarkTest00024.java
+@@ -55,7 +55,7 @@ public class BenchmarkTest00024 extends HttpServlet {
+                             java.sql.ResultSet.TYPE_FORWARD_ONLY,
+                             java.sql.ResultSet.CONCUR_READ_ONLY,
+                             java.sql.ResultSet.CLOSE_CURSORS_AT_COMMIT);
+-            statement.setString(1, "foo");
++            statement.setString(1, param);
+             statement.execute();
+             org.owasp.benchmark.helpers.DatabaseHelper.printResults(statement, sql, response);
+         } catch (java.sql.SQLException e) {
+
+--- ldap ---
+672:            <artifactId>api-ldap-model</artifactId>
+673-            <version>2.1.7</version>

@@ -1,0 +1,7 @@
+⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
+
+session_id: local-2c2bbca6309cc1e06c5f2ae1cdc72e5531da42729e2364ed95f95c510c495cc2
+Done. Recorded **FP** for F-00147.
+
+The `valuesList` holds `["safe", param, "moresafe"]`. After `remove(0)`, it becomes `[param, "moresafe"]`, so `get(1)` returns `"moresafe"` — not the user input. The sink never receives tainted data.
+exit=0

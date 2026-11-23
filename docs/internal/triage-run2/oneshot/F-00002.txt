@@ -1,0 +1,12 @@
+⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
+
+session_id: local-d17cbcc92e31c6036545f8a048997971bca98e22f7a0e1d1d91c709fa0826565
+```json
+{
+  "name": "read_file",
+  "arguments": {
+    "path": "/opt/data/workspace/BenchmarkJava/src/main/java/com/example/demo/FindingService.java"
+  }
+}
+```
+exit=0

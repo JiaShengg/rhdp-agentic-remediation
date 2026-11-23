@@ -1,0 +1,7 @@
+⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
+
+session_id: local-0197138cf43e21ecb55da748db89a0723a7c9350e2e280577f7e077e525d3309
+Decision recorded: **TP** (True Positive).
+
+**Summary:** `BenchmarkTest00007.java:40` — user input from an HTTP header flows directly into `Runtime.exec()` as an environment variable without any sanitization, enabling command injection via environment manipulation.
+exit=0

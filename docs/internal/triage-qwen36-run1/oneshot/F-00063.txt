@@ -1,0 +1,7 @@
+⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
+Recorded **FP** for F-00063.
+
+The ternary `(7*18)+106 > 200` evaluates to `232 > 200` (always true), so `bar` is always the constant `"This_should_always_happen"`. User-controlled cookie input never reaches the `FileInputStream`. The finding line (40, `setHttpOnly(true)`) is also misaligned with the actual sink at line 78.
+
+session_id: local-cf35bbbf136f38b1fb545a5be9e634974e071691d7cce68abf7114972b9db6d3
+exit=0

@@ -1,0 +1,89 @@
+# Qwen3.6-27B-FP8 weights. 80Gi leaves room for the FP8 checkpoint plus vision files.
+# The Job must schedule on the L40S node so the WaitForFirstConsumer EBS volume
+# binds in that node's zone. Do not select the node by hostname.
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: qwen36-27b-fp8
+  namespace: remediation-pov
+  labels:
+    app.kubernetes.io/part-of: remediation-pov
+    model: qwen36-27b
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 80Gi
+  storageClassName: gp3-csi
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: download-qwen36-27b-fp8
+  namespace: remediation-pov
+  labels:
+    app.kubernetes.io/part-of: remediation-pov
+    model: qwen36-27b
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app: download-qwen36-27b-fp8
+    spec:
+      restartPolicy: OnFailure
+      tolerations:
+        - effect: NoSchedule
+          key: nvidia.com/gpu
+          operator: Exists
+      nodeSelector:
+        rhdp.redhat.com/gpu: l40s
+      securityContext:
+        runAsUser: 0
+        fsGroup: 0
+      containers:
+        - name: download
+          image: registry.access.redhat.com/ubi9/python-311:latest@sha256:7b6cb58d3ff034df7b300800bd89a469d9bd2f739d43250d76b9c9e805307ab5
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: 0
+            allowPrivilegeEscalation: false
+          env:
+            # cas-server.xethub.hf.co is on the EgressFirewall allowlist.
+            # Xet stays off so a re-run uses the LFS CDN hosts. Do not delete the firewall.
+            - name: HF_HUB_DISABLE_XET
+              value: "1"
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -euo pipefail
+              echo "Downloading Qwen/Qwen3.6-27B-FP8 into /models ..."
+              pip install -q "huggingface_hub==0.36.0"
+              python - <<'PY'
+              from huggingface_hub import snapshot_download
+              snapshot_download(
+                  repo_id="Qwen/Qwen3.6-27B-FP8",
+                  local_dir="/models",
+              )
+              print("snapshot_download finished")
+              PY
+              echo "Download complete. Listing:"
+              du -sh /models
+              ls -la /models | head -40
+          volumeMounts:
+            - name: model
+              mountPath: /models
+          resources:
+            requests:
+              cpu: "1"
+              memory: 4Gi
+            limits:
+              cpu: "4"
+              memory: 8Gi
+      volumes:
+        - name: model
+          persistentVolumeClaim:
+            claimName: qwen36-27b-fp8

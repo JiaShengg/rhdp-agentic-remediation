@@ -1,0 +1,7 @@
+⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
+
+session_id: local-69bc732b0bc274a98b95a2ed03fbd647c2d4b458d1a4ec75d70b7a82f9c04faf
+**F-00104: FP (False Positive)**
+
+The SQL query is a hardcoded constant string with no user input flowing into it. The `bar` variable (which could contain user-controlled data) is never used in the query. No injection path exists. Decision recorded.
+exit=0

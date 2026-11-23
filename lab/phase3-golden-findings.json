@@ -1,0 +1,228 @@
+{
+  "source": "OWASP BenchmarkJava expectedresults-1.2.csv",
+  "repo": "https://github.com/OWASP-Benchmark/BenchmarkJava",
+  "upstream": "https://github.com/OWASP-Benchmark/BenchmarkJava",
+  "note": "Demo case map (ids/files). TP/FP labels come only from offline expectedresults-1.2.csv via scripts/score.py.",
+  "demo_cases": [
+    {
+      "id": "F-00008",
+      "test_case": "BenchmarkTest00008",
+      "tool": "stub-fortify",
+      "cwe": "CWE-89",
+      "category": "sqli",
+      "severity": "high",
+      "file": "src/main/java/org/owasp/benchmark/testcode/BenchmarkTest00008.java",
+      "line": 40,
+      "message": "SQL Injection: untrusted input reaches SQL"
+    },
+    {
+      "id": "F-00018",
+      "test_case": "BenchmarkTest00018",
+      "tool": "stub-fortify",
+      "cwe": "CWE-89",
+      "category": "sqli",
+      "severity": "high",
+      "file": "src/main/java/org/owasp/benchmark/testcode/BenchmarkTest00018.java",
+      "line": 40,
+      "message": "SQL Injection: untrusted input reaches SQL"
+    },
+    {
+      "id": "F-00024",
+      "test_case": "BenchmarkTest00024",
+      "tool": "stub-fortify",
+      "cwe": "CWE-89",
+      "category": "sqli",
+      "severity": "high",
+      "file": "src/main/java/org/owasp/benchmark/testcode/BenchmarkTest00024.java",
+      "line": 40,
+      "message": "SQL Injection: untrusted input reaches SQL"
+    },
+    {
+      "id": "F-00052",
+      "test_case": "BenchmarkTest00052",
+      "tool": "stub-fortify",
+      "cwe": "CWE-89",
+      "category": "sqli",
+      "severity": "high",
+      "file": "src/main/java/org/owasp/benchmark/testcode/BenchmarkTest00052.java",
+      "line": 40,
+      "message": "SQL Injection: untrusted input reaches SQL"
+    },
+    {
+      "id": "F-00104",
+      "test_case": "BenchmarkTest00104",
+      "tool": "stub-fortify",
+      "cwe": "CWE-89",
+      "category": "sqli",
+      "severity": "high",
+      "file": "src/main/java/org/owasp/benchmark/testcode/BenchmarkTest00104.java",
+      "line": 40,
+      "message": "SQL Injection: untrusted input reaches SQL"
+    },
+    {
+      "id": "F-00013",
+      "test_case": "BenchmarkTest00013",
+      "tool": "stub-fortify",
+      "cwe": "CWE-79",
+      "category": "xss",
+      "severity": "high",
+      "file": "src/main/java/org/owasp/benchmark/testcode/BenchmarkTest00013.java",
+      "line": 40,
+      "message": "Cross-site scripting: untrusted input reaches HTML sink"
+    },
+    {
+      "id": "F-00014",
+      "test_case": "BenchmarkTest00014",
+      "tool": "stub-fortify",
+      "cwe": "CWE-79",
+      "category": "xss",
+      "severity": "high",
+      "file": "src/main/java/org/owasp/benchmark/testcode/BenchmarkTest00014.java",
+      "line": 40,
+      "message": "Cross-site scripting: untrusted input reaches HTML sink"
+    },
+    {
+      "id": "F-00030",
+      "test_case": "BenchmarkTest00030",
+      "tool": "stub-fortify",
+      "cwe": "CWE-79",
+      "category": "xss",
+      "severity": "high",
+      "file": "src/main/java/org/owasp/benchmark/testcode/BenchmarkTest00030.java",
+      "line": 40,
+      "message": "Cross-site scripting: untrusted input reaches HTML sink"
+    },
+    {
+      "id": "F-00147",
+      "test_case": "BenchmarkTest00147",
+      "tool": "stub-fortify",
+      "cwe": "CWE-79",
+      "category": "xss",
+      "severity": "high",
+      "file": "src/main/java/org/owasp/benchmark/testcode/BenchmarkTest00147.java",
+      "line": 40,
+      "message": "Cross-site scripting: untrusted input reaches HTML sink"
+    },
+    {
+      "id": "F-00151",
+      "test_case": "BenchmarkTest00151",
+      "tool": "stub-fortify",
+      "cwe": "CWE-79",
+      "category": "xss",
+      "severity": "high",
+      "file": "src/main/java/org/owasp/benchmark/testcode/BenchmarkTest00151.java",
+      "line": 40,
+      "message": "Cross-site scripting: untrusted input reaches HTML sink"
+    },
+    {
+      "id": "F-00001",
+      "test_case": "BenchmarkTest00001",
+      "tool": "stub-fortify",
+      "cwe": "CWE-22",
+      "category": "pathtraver",
+      "severity": "high",
+      "file": "src/main/java/org/owasp/benchmark/testcode/BenchmarkTest00001.java",
+      "line": 40,
+      "message": "Path traversal: untrusted input reaches file path"
+    },
+    {
+      "id": "F-00002",
+      "test_case": "BenchmarkTest00002",
+      "tool": "stub-fortify",
+      "cwe": "CWE-22",
+      "category": "pathtraver",
+      "severity": "high",
+      "file": "src/main/java/org/owasp/benchmark/testcode/BenchmarkTest00002.java",
+      "line": 40,
+      "message": "Path traversal: untrusted input reaches file path"
+    },
+    {
+      "id": "F-00011",
+      "test_case": "BenchmarkTest00011",
+      "tool": "stub-fortify",
+      "cwe": "CWE-22",
+      "category": "pathtraver",
+      "severity": "high",
+      "file": "src/main/java/org/owasp/benchmark/testcode/BenchmarkTest00011.java",
+      "line": 40,
+      "message": "Path traversal: untrusted input reaches file path"
+    },
+    {
+      "id": "F-00063",
+      "test_case": "BenchmarkTest00063",
+      "tool": "stub-fortify",
+      "cwe": "CWE-22",
+      "category": "pathtraver",
+      "severity": "high",
+      "file": "src/main/java/org/owasp/benchmark/testcode/BenchmarkTest00063.java",
+      "line": 40,
+      "message": "Path traversal: untrusted input reaches file path"
+    },
+    {
+      "id": "F-00064",
+      "test_case": "BenchmarkTest00064",
+      "tool": "stub-fortify",
+      "cwe": "CWE-22",
+      "category": "pathtraver",
+      "severity": "high",
+      "file": "src/main/java/org/owasp/benchmark/testcode/BenchmarkTest00064.java",
+      "line": 40,
+      "message": "Path traversal: untrusted input reaches file path"
+    },
+    {
+      "id": "F-00006",
+      "test_case": "BenchmarkTest00006",
+      "tool": "stub-fortify",
+      "cwe": "CWE-78",
+      "category": "cmdi",
+      "severity": "high",
+      "file": "src/main/java/org/owasp/benchmark/testcode/BenchmarkTest00006.java",
+      "line": 40,
+      "message": "Command injection: untrusted input reaches process exec"
+    },
+    {
+      "id": "F-00007",
+      "test_case": "BenchmarkTest00007",
+      "tool": "stub-fortify",
+      "cwe": "CWE-78",
+      "category": "cmdi",
+      "severity": "high",
+      "file": "src/main/java/org/owasp/benchmark/testcode/BenchmarkTest00007.java",
+      "line": 40,
+      "message": "Command injection: untrusted input reaches process exec"
+    },
+    {
+      "id": "F-00015",
+      "test_case": "BenchmarkTest00015",
+      "tool": "stub-fortify",
+      "cwe": "CWE-78",
+      "category": "cmdi",
+      "severity": "high",
+      "file": "src/main/java/org/owasp/benchmark/testcode/BenchmarkTest00015.java",
+      "line": 40,
+      "message": "Command injection: untrusted input reaches process exec"
+    },
+    {
+      "id": "F-00051",
+      "test_case": "BenchmarkTest00051",
+      "tool": "stub-fortify",
+      "cwe": "CWE-78",
+      "category": "cmdi",
+      "severity": "high",
+      "file": "src/main/java/org/owasp/benchmark/testcode/BenchmarkTest00051.java",
+      "line": 40,
+      "message": "Command injection: untrusted input reaches process exec"
+    },
+    {
+      "id": "F-00090",
+      "test_case": "BenchmarkTest00090",
+      "tool": "stub-fortify",
+      "cwe": "CWE-78",
+      "category": "cmdi",
+      "severity": "high",
+      "file": "src/main/java/org/owasp/benchmark/testcode/BenchmarkTest00090.java",
+      "line": 40,
+      "message": "Command injection: untrusted input reaches process exec"
+    }
+  ]
+}

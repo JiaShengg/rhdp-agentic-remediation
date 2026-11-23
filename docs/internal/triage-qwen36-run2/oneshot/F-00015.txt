@@ -1,0 +1,7 @@
+⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
+
+session_id: local-0feb7ecf1fe6202399e6f43f7805b160352426a423421b99e514f94925480e23
+Done. Recorded **TP** (true positive) for F-00015.
+
+**Summary:** Untrusted input from `request.getHeaders("BenchmarkTest00015")` is URL-decoded but never sanitized, then directly concatenated into `argList` as `"echo " + param`. That list is passed to `ProcessBuilder.command()` which executes via `sh -c` (Linux) or `cmd.exe /c` (Windows), enabling arbitrary command injection. Classic CWE-78.
+exit=0

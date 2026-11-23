@@ -1,0 +1,181 @@
+# Lab network controls for remediation-pov.
+# - NetworkPolicy: DNS + in-cluster services; Hermes may open TCP 443 to any IP
+#   (host allowlisting is done by EgressFirewall, not NetworkPolicy).
+# - EgressFirewall (OVN): dnsName allowlist on 443, then Deny 0.0.0.0/0.
+#
+# If the model download Job fails on CDN redirects under a strict firewall,
+# apply NetworkPolicy without the EgressFirewall first (or delete the
+# EgressFirewall), finish the download Job + stub start, then apply this file
+# in full so the EgressFirewall is enforced for the rest of the lab.
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: hermes-egress
+  namespace: remediation-pov
+  labels:
+    app.kubernetes.io/part-of: remediation-pov
+spec:
+  podSelector:
+    matchLabels:
+      app: hermes-agent
+  policyTypes:
+    - Egress
+  egress:
+    # DNS (cluster DNS + mDNS / NodeLocal 5353)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+        - protocol: UDP
+          port: 5353
+        - protocol: TCP
+          port: 5353
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+        - protocol: UDP
+          port: 5353
+        - protocol: TCP
+          port: 5353
+    # In-cluster services in this namespace (vLLM, stub, self build port)
+    - to:
+        - podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 8080
+        - protocol: TCP
+          port: 8081
+        - protocol: TCP
+          port: 80
+        - protocol: TCP
+          port: 443
+    # External HTTPS: NetworkPolicy permits 443 broadly; EgressFirewall allowlists hosts
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 443
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: stub-ingress-from-hermes
+  namespace: remediation-pov
+  labels:
+    app.kubernetes.io/part-of: remediation-pov
+spec:
+  podSelector:
+    matchLabels:
+      app: stub-findings-mcp
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: hermes-agent
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+# OpenShift OVN-Kubernetes EgressFirewall: external destinations only.
+# DNS names require OVN egress firewall DNS support on the cluster.
+apiVersion: k8s.ovn.org/v1
+kind: EgressFirewall
+metadata:
+  name: default
+  namespace: remediation-pov
+  labels:
+    app.kubernetes.io/part-of: remediation-pov
+spec:
+  egress:
+    - type: Allow
+      to:
+        dnsName: github.com
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        dnsName: repo.maven.apache.org
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        dnsName: archive.apache.org
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        dnsName: huggingface.co
+      ports:
+        - protocol: TCP
+          port: 443
+    # Hugging Face LFS CDN and Xet (cas-server.xethub.hf.co). Exact dnsName; no wildcards.
+    # Add a missing host here. Do not delete this EgressFirewall to unblock a download.
+    - type: Allow
+      to:
+        dnsName: cdn-lfs.huggingface.co
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        dnsName: cdn-lfs-us-1.huggingface.co
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        dnsName: cdn-lfs-eu-1.huggingface.co
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        dnsName: cas-server.xethub.hf.co
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        dnsName: cas-bridge.xethub.hf.co
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        dnsName: transfer.xethub.hf.co
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        dnsName: pypi.org
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Allow
+      to:
+        dnsName: files.pythonhosted.org
+      ports:
+        - protocol: TCP
+          port: 443
+    - type: Deny
+      to:
+        cidrSelector: 0.0.0.0/0

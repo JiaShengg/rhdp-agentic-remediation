@@ -1,0 +1,5 @@
+⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
+Recorded **TP** for F-00002. The cookie value flows un sanitized into `FileOutputStream` at line 73 — genuine path traversal. No code changes made.
+
+session_id: local-fe6e250064e6ad0153b6ae1d17894dcc6b7149cbceefa7b3aac0b247945452bd
+exit=0

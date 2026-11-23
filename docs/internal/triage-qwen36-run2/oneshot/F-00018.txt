@@ -1,0 +1,7 @@
+⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
+
+session_id: local-a18ca1db9a76b8d83cb06f66cd0272d3bd1220c1161c8f5a61f227d31f79814c
+Done. Decision recorded: **TP** (true positive).
+
+The code at `BenchmarkTest00018.java:54` takes user-controlled input from an HTTP header and concatenates it directly into a raw SQL string, which is then executed via `statement.executeUpdate()` without any parameterization or sanitization. Classic SQL injection.
+exit=0

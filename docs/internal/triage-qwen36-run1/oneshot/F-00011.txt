@@ -1,0 +1,5 @@
+⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
+
+session_id: local-29c14a98bfd30d768a6346d9b601d19f990d17eec3025ccc47ff392b6fd8f705
+Done. Recorded **TP** for F-00011. The vulnerability is genuine: untrusted HTTP header input flows directly into a `File` constructor with no sanitization, enabling path traversal.
+exit=0

@@ -1,0 +1,12 @@
+⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
+
+session_id: local-010c2ca4618b414c53d78cb2aacb386ffd7ea20e5e502362788118973f56bbae
+```json
+{
+  "name": "read_file",
+  "arguments": {
+    "path": "/opt/data/workspace/BenchmarkJava/src/main/java/com/example/demo/Foo.java"
+  }
+}
+```
+exit=0

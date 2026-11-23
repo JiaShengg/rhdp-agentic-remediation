@@ -1,0 +1,445 @@
+# Phase 5: Hermes Agent dashboard + MCP bridge to stub findings
+# Create Secret first from lab/hermes/secret.example.yaml (never commit real values).
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: hermes-data
+  namespace: remediation-pov
+  labels:
+    app: hermes-agent
+    app.kubernetes.io/part-of: remediation-pov
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: gp3-csi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hermes-bootstrap
+  namespace: remediation-pov
+  labels:
+    app: hermes-agent
+    app.kubernetes.io/part-of: remediation-pov
+data:
+  config.yaml: |
+    # Hermes profile for RHDP remediation lab (in-cluster vLLM only)
+    _config_version: 54
+
+    model:
+      default: "qwen36-27b"
+      provider: "custom"
+      base_url: "http://qwen36-27b-openai.remediation-pov.svc.cluster.local/v1"
+      api_key: "not-needed"
+      api_mode: chat_completions
+      # Kept after the 131072 probe: 2.41x concurrency at 128K, two sessions fit.
+      context_length: 131072
+
+    # Disable Mixture of Agents — never fan out to OpenRouter or other cloud models.
+    moa:
+      default_preset: default
+      presets:
+        default:
+          enabled: false
+          reference_models: []
+          aggregator:
+            provider: custom
+            model: qwen36-27b
+
+    # Pin every auxiliary task to the main (in-cluster) model. provider "main"
+    # means Hermes uses the active custom endpoint, not OpenRouter auto-discovery.
+    # See: https://hermes-agent.nousresearch.com/docs/user-guide/features/fallback-providers
+    auxiliary:
+      vision:
+        provider: main
+        model: ""
+      web_extract:
+        provider: main
+        model: ""
+      compression:
+        provider: main
+        model: ""
+      title_generation:
+        provider: main
+        model: ""
+      curator:
+        provider: main
+        model: ""
+      background_review:
+        provider: main
+        model: ""
+      skills_hub:
+        provider: main
+        model: ""
+      mcp:
+        provider: main
+        model: ""
+      flush_memories:
+        provider: main
+        model: ""
+      session_search:
+        provider: main
+        model: ""
+
+    # No cloud fallback chain.
+    fallback_providers: []
+
+    # Agentic sampling from the Qwen3.6-27B-FP8 card.
+    # Thinking stays on. preserve_thinking is the agentic setting (chat_template_kwargs).
+    # temperature 1.0 / top_p 0.95 / top_k 20 are the checkpoint generation_config
+    # (card: thinking mode for general tasks). Hermes forwards extra_body only.
+    custom_providers:
+      - name: in-cluster-vllm
+        base_url: "http://qwen36-27b-openai.remediation-pov.svc.cluster.local/v1"
+        model: qwen36-27b
+        extra_body:
+          # Leave temperature unset so triage uses the checkpoint default (1.0).
+          # A remediation run sets temperature here, then Hermes is restarted.
+          # extra_body is merged over the typed chat body, so this value is the
+          # request temperature.
+          top_k: 20
+          min_p: 0.0
+          presence_penalty: 0.0
+          repetition_penalty: 1.0
+          chat_template_kwargs:
+            enable_thinking: true
+            preserve_thinking: true
+
+    mcp_servers:
+      stub-fortify:
+        command: "python3"
+        args:
+          - "/opt/data/mcp-bridge.py"
+        env:
+          STUB_FINDINGS_URL: "http://stub-findings-mcp.remediation-pov.svc.cluster.local"
+        enabled: true
+
+    # Hermes has no config switch to hide the MCP catalog UI. Lab policy:
+    # only stub-fortify is allowed. Enforce with NetworkPolicy (lab/networkpolicy.yaml).
+    # Do not install catalog MCP servers from the dashboard.
+
+    terminal:
+      backend: "local"
+      timeout: 180
+
+    display:
+      interface: "tui"
+
+    platform_toolsets:
+      cli:
+        - file
+        - terminal
+
+    agent:
+      max_turns: 30
+      reasoning_effort: low
+      # Coder-7B often narrates tools under tool_choice=auto; force Hermes nudges.
+      tool_use_enforcement: true
+      intent_ack_continuation: true
+      execution_guidance: true
+
+    compression:
+      enabled: true
+
+    tools:
+      tool_search:
+        enabled: off
+  triage.md: |
+    # Triage
+
+    When deciding whether a finding is a true or false positive:
+
+    - Cite the file and line numbers that support the decision.
+    - State where the input comes from and whether it reaches the sink unchanged.
+    - When a branch depends on a constant expression, evaluate it explicitly, show the result, and follow only the branch that runs.
+    - Only change code when the finding is a true positive.
+    - If the evidence does not support either decision, record NEEDS_DEVELOPER.
+    - Call record_decision with the decision and the reason.
+  sqli-remediation.md: |
+    # SQL injection remediation
+
+    When a finding is SQL injection, change the query without changing what the program does.
+
+    - Keep the original behaviour and the original inputs.
+    - Move user input out of the SQL string into `?` placeholders on a PreparedStatement or CallableStatement.
+    - Bind each former input with the matching setter (`setString`, `setObject`, or the setter for that type).
+    - Do not delete inputs, hardcode values, or comment out code to make a finding disappear.
+    - If a safe fix is not clear, record the finding as NEEDS_DEVELOPER instead of guessing.
+
+    Before committing a fix, show `git diff` and check it against these rules:
+
+    - The SQL text is unchanged except for value placeholders.
+    - Every former user input is still used and bound to a placeholder.
+    - No placeholder replaces a procedure, table, or column name.
+    - No new hardcoded literals.
+    - No code is deleted or commented out to remove the finding.
+
+    If any rule fails, revise the fix once. If the revision still fails, record NEEDS_DEVELOPER and do not commit.
+  start.sh: |
+    #!/bin/bash
+    set -euo pipefail
+    export HERMES_HOME=/opt/data
+    export HOME=/opt/data
+    mkdir -p "$HERMES_HOME"
+
+    HERMES_UID=$(id -u hermes 2>/dev/null || echo 1000)
+    HERMES_GID=$(id -g hermes 2>/dev/null || echo 1000)
+    mkdir -p "$HERMES_HOME"/{cron,sessions,skills,memories,workspace,logs,attachments}
+    cp /bootstrap/config.yaml "$HERMES_HOME/config.yaml"
+    cp /bootstrap/mcp-bridge.py "$HERMES_HOME/mcp-bridge.py"
+    mkdir -p "$HERMES_HOME/skills/triage" "$HERMES_HOME/skills/sqli-remediation"
+    cp /bootstrap/triage.md "$HERMES_HOME/skills/triage/SKILL.md"
+    cp /bootstrap/sqli-remediation.md "$HERMES_HOME/skills/sqli-remediation/SKILL.md"
+    cat /bootstrap/triage.md /bootstrap/sqli-remediation.md > "$HERMES_HOME/SOUL.md"
+    chmod +x "$HERMES_HOME/mcp-bridge.py"
+
+    # Never export cloud provider keys. In-cluster vLLM only.
+    unset OPENROUTER_API_KEY NOUS_API_KEY ANTHROPIC_API_KEY OPENAI_API_KEY || true
+    cat > "$HERMES_HOME/.env" <<EOF
+    OPENAI_BASE_URL=${OPENAI_BASE_URL}
+    OPENAI_API_KEY=${OPENAI_API_KEY:-not-needed}
+    HERMES_DASHBOARD_BASIC_AUTH_USERNAME=${HERMES_DASHBOARD_BASIC_AUTH_USERNAME}
+    HERMES_DASHBOARD_BASIC_AUTH_PASSWORD=${HERMES_DASHBOARD_BASIC_AUTH_PASSWORD}
+    HERMES_DASHBOARD_BASIC_AUTH_SECRET=${HERMES_DASHBOARD_BASIC_AUTH_SECRET}
+    EOF
+    # Strip any accidental cloud keys if present in an old PVC .env
+    sed -i '/OPENROUTER/d;/ANTHROPIC_API_KEY/d;/NOUS_API_KEY/d' "$HERMES_HOME/.env" || true
+
+    WS="$HERMES_HOME/workspace/BenchmarkJava"
+    if [ ! -d "$WS/src" ]; then
+      TMP=$(mktemp -d)
+      git clone --depth 1 https://github.com/OWASP-Benchmark/BenchmarkJava.git "$TMP/bj" || true
+      if [ -d "$TMP/bj" ]; then
+        # Populate without answer key and without upstream git history
+        mkdir -p "$WS"
+        (cd "$TMP/bj" && git archive HEAD) | tar -x -C "$WS"
+        rm -f "$WS"/expectedresults*.csv || true
+        rm -rf "$WS/.git" || true
+        (cd "$WS" && git init -b main && git add -A && git -c user.email=lab@local -c user.name=lab commit -m "lab workspace seed" || true)
+      fi
+      rm -rf "$TMP"
+    else
+      # Existing PVC: still strip answer key if present
+      rm -f "$WS"/expectedresults*.csv || true
+    fi
+
+    chown -R "${HERMES_UID}:${HERMES_GID}" "$HERMES_HOME" || chmod -R a+rwX "$HERMES_HOME"
+    # Keep Hermes home traversable so the build-runner sidecar can read/write the workspace.
+    chmod 755 "$HERMES_HOME" "$HERMES_HOME/workspace" 2>/dev/null || true
+    chmod -R u+rwX,g+rwX,o+rX "$WS" 2>/dev/null || true
+
+    # Qwen3.6 context meets Hermes's 64K minimum. Do not lower MINIMUM_CONTEXT_LENGTH.
+
+    # Text-JSON tool stubs are a no-op unless HERMES_TEXT_TOOLCALL_FALLBACK=true.
+    cp /bootstrap/patch_coder_tool_json.py "$HERMES_HOME/patch_coder_tool_json.py"
+    python3 /bootstrap/patch_coder_tool_json.py
+
+    echo "Starting Hermes dashboard on 0.0.0.0:9119 as hermes ..."
+    if command -v runuser >/dev/null 2>&1; then
+      exec runuser -u hermes -- hermes dashboard --host 0.0.0.0 --port 9119 --no-open --skip-build
+    fi
+    exec hermes dashboard --host 0.0.0.0 --port 9119 --no-open --skip-build
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hermes-agent
+  namespace: remediation-pov
+  labels:
+    app: hermes-agent
+    app.kubernetes.io/part-of: remediation-pov
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: hermes-agent
+  template:
+    metadata:
+      labels:
+        app: hermes-agent
+        app.kubernetes.io/part-of: remediation-pov
+    spec:
+      securityContext:
+        runAsNonRoot: false
+      containers:
+        - name: hermes
+          # Pin by digest (linux/amd64 of v0.23.3)
+          image: docker.io/nousresearch/hermes-agent:v0.23.3@sha256:41468459379a943cf0a25a55589e230d244bd9f95b83cff5eca789470c892fac
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/bash", "/bootstrap/start.sh"]
+          envFrom:
+            - secretRef:
+                name: hermes-dashboard-auth
+          env:
+            - name: HERMES_HOME
+              value: /opt/data
+            - name: HOME
+              value: /opt/data
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            - name: STUB_FINDINGS_URL
+              value: http://stub-findings-mcp.remediation-pov.svc.cluster.local
+            # Explicitly empty — do not inherit cloud provider keys
+            - name: OPENROUTER_API_KEY
+              value: ""
+          ports:
+            - name: http
+              containerPort: 9119
+          volumeMounts:
+            - name: data
+              mountPath: /opt/data
+            - name: bootstrap
+              mountPath: /bootstrap
+          readinessProbe:
+            httpGet:
+              path: /api/status
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /api/status
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 5
+          resources:
+            requests:
+              cpu: "500m"
+              memory: 2Gi
+            limits:
+              cpu: "2"
+              memory: 4Gi
+        - name: build-runner
+          image: registry.access.redhat.com/ubi9/openjdk-17:1.22-1@sha256:a73f07fa5f52b9f2844bb615e2bf35f07a413a830619b895504747971cd43edb
+          imagePullPolicy: IfNotPresent
+          # Same UID as Hermes data owner so OpenRewrite can write pom.xml / rewrite.yml.
+          securityContext:
+            runAsUser: 0
+            runAsNonRoot: false
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              set -euo pipefail
+              if ! command -v mvn >/dev/null 2>&1; then
+                MAVEN_TGZ=/tmp/apache-maven-3.9.9-bin.tar.gz
+                MAVEN_SHA512=a555254d6b53d267965a3404ecb14e53c3827c09c3b94b5678835887ab404556bfaf78dcfe03ba76fa2508649dca8531c74bca4d5846513522404d48e8c4ac8b
+                curl -fsSL https://archive.apache.org/dist/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.tar.gz -o "$MAVEN_TGZ"
+                echo "$MAVEN_SHA512  $MAVEN_TGZ" | sha512sum -c -
+                tar -xzf "$MAVEN_TGZ" -C /opt
+                rm -f "$MAVEN_TGZ"
+                export PATH="/opt/apache-maven-3.9.9/bin:$PATH"
+                echo 'export PATH=/opt/apache-maven-3.9.9/bin:$PATH' >> /etc/profile.d/maven.sh || true
+              fi
+              export PATH="/opt/apache-maven-3.9.9/bin:${PATH:-}"
+              exec python3 /bootstrap/build-runner-server.py
+          env:
+            - name: WORKSPACE_ROOT
+              value: /opt/data/workspace/BenchmarkJava
+            - name: PORT
+              value: "8081"
+          ports:
+            - name: build
+              containerPort: 8081
+          volumeMounts:
+            - name: data
+              mountPath: /opt/data
+            - name: bootstrap
+              mountPath: /bootstrap
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: build
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 200m
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              memory: 4Gi
+
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: hermes-data
+        - name: bootstrap
+          projected:
+            sources:
+              - configMap:
+                  name: hermes-bootstrap
+                  items:
+                    - key: config.yaml
+                      path: config.yaml
+                    - key: start.sh
+                      path: start.sh
+                      mode: 0755
+                    - key: triage.md
+                      path: triage.md
+                    - key: sqli-remediation.md
+                      path: sqli-remediation.md
+              - configMap:
+                  name: hermes-mcp-bridge
+                  items:
+                    - key: mcp-bridge.py
+                      path: mcp-bridge.py
+                      mode: 0755
+              - configMap:
+                  name: hermes-build-runner
+                  items:
+                    - key: build-runner-server.py
+                      path: build-runner-server.py
+                      mode: 0755
+              - configMap:
+                  name: hermes-coder-patch
+                  items:
+                    - key: patch_coder_tool_json.py
+                      path: patch_coder_tool_json.py
+                      mode: 0755
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hermes-agent
+  namespace: remediation-pov
+  labels:
+    app: hermes-agent
+    app.kubernetes.io/part-of: remediation-pov
+spec:
+  selector:
+    app: hermes-agent
+  ports:
+    - name: http
+      port: 9119
+      targetPort: 9119
+    - name: build
+      port: 8081
+      targetPort: 8081
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: hermes-agent
+  namespace: remediation-pov
+  labels:
+    app: hermes-agent
+    app.kubernetes.io/part-of: remediation-pov
+spec:
+  to:
+    kind: Service
+    name: hermes-agent
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

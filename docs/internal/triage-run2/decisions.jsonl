@@ -1,0 +1,1 @@
+{"ts": "2026-11-22T15:49:46.098482+00:00", "finding_id": "F-00011", "decision": "FP", "reason": "The code demonstrates a secure handling of file uploads by using a predefined directory and does not allow untrusted input to reach the file path.", "changed_files": [], "build_ok": true}

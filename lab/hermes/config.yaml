@@ -1,0 +1,121 @@
+# Hermes profile for RHDP remediation lab (in-cluster vLLM only)
+_config_version: 54
+
+model:
+  default: "qwen36-27b"
+  provider: "custom"
+  base_url: "http://qwen36-27b-openai.remediation-pov.svc.cluster.local/v1"
+  api_key: "not-needed"
+  api_mode: chat_completions
+  # Kept after the 131072 probe: 2.41x concurrency at 128K, two sessions fit.
+  context_length: 131072
+
+# Disable Mixture of Agents — never fan out to OpenRouter or other cloud models.
+moa:
+  default_preset: default
+  presets:
+    default:
+      enabled: false
+      reference_models: []
+      aggregator:
+        provider: custom
+        model: qwen36-27b
+
+# Pin every auxiliary task to the main (in-cluster) model. provider "main"
+# means Hermes uses the active custom endpoint, not OpenRouter auto-discovery.
+# See: https://hermes-agent.nousresearch.com/docs/user-guide/features/fallback-providers
+auxiliary:
+  vision:
+    provider: main
+    model: ""
+  web_extract:
+    provider: main
+    model: ""
+  compression:
+    provider: main
+    model: ""
+  title_generation:
+    provider: main
+    model: ""
+  curator:
+    provider: main
+    model: ""
+  background_review:
+    provider: main
+    model: ""
+  skills_hub:
+    provider: main
+    model: ""
+  mcp:
+    provider: main
+    model: ""
+  flush_memories:
+    provider: main
+    model: ""
+  session_search:
+    provider: main
+    model: ""
+
+# No cloud fallback chain.
+fallback_providers: []
+
+# Agentic sampling from the Qwen3.6-27B-FP8 card.
+# Thinking stays on. preserve_thinking is the agentic setting (chat_template_kwargs).
+# temperature 1.0 / top_p 0.95 / top_k 20 are the checkpoint generation_config
+# (card: thinking mode for general tasks). Hermes forwards extra_body only.
+custom_providers:
+  - name: in-cluster-vllm
+    base_url: "http://qwen36-27b-openai.remediation-pov.svc.cluster.local/v1"
+    model: qwen36-27b
+    extra_body:
+      # Leave temperature unset so triage uses the checkpoint default (1.0).
+      # A remediation run sets temperature here, then Hermes is restarted.
+      # extra_body is merged over the typed chat body, so this value is the
+      # request temperature.
+      top_k: 20
+      min_p: 0.0
+      presence_penalty: 0.0
+      repetition_penalty: 1.0
+      chat_template_kwargs:
+        enable_thinking: true
+        preserve_thinking: true
+
+mcp_servers:
+  stub-fortify:
+    command: "python3"
+    args:
+      - "/opt/data/mcp-bridge.py"
+    env:
+      STUB_FINDINGS_URL: "http://stub-findings-mcp.remediation-pov.svc.cluster.local"
+    enabled: true
+
+# Hermes has no config switch to hide the MCP catalog UI. Lab policy:
+# only stub-fortify is allowed. Enforce with NetworkPolicy (lab/networkpolicy.yaml).
+# Do not install catalog MCP servers from the dashboard.
+
+terminal:
+  backend: "local"
+  timeout: 180
+
+display:
+  interface: "tui"
+
+platform_toolsets:
+  cli:
+    - file
+    - terminal
+
+agent:
+  max_turns: 30
+  reasoning_effort: low
+  # Coder-7B often narrates tools under tool_choice=auto; force Hermes nudges.
+  tool_use_enforcement: true
+  intent_ack_continuation: true
+  execution_guidance: true
+
+compression:
+  enabled: true
+
+tools:
+  tool_search:
+    enabled: off

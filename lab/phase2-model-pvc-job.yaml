@@ -1,0 +1,87 @@
+# Lab default weights: Qwen2.5-Coder-7B-Instruct (same L4 footprint as Instruct).
+# Revert repo_id to Qwen/Qwen2.5-7B-Instruct if you need the general chat variant.
+# Still lab-sized — not the POV Qwen3.6-27B.
+# Requires HF LFS CDN egress (see lab/networkpolicy.yaml) or delete EgressFirewall
+# for the duration of this Job, then re-apply.
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: qwen25-7b-model
+  namespace: remediation-pov
+  labels:
+    app.kubernetes.io/part-of: remediation-pov
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 40Gi
+  storageClassName: gp3-csi
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: download-qwen25-coder-7b
+  namespace: remediation-pov
+  labels:
+    app.kubernetes.io/part-of: remediation-pov
+    model: qwen25-coder-7b
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app: download-qwen25-coder-7b
+    spec:
+      restartPolicy: OnFailure
+      # Must land on the GPU node so RWO EBS PVC can later attach to vLLM.
+      tolerations:
+        - effect: NoSchedule
+          key: nvidia.com/gpu
+          operator: Exists
+      nodeSelector:
+        nvidia.com/gpu.present: "true"
+      securityContext:
+        runAsUser: 0
+        fsGroup: 0
+      containers:
+        - name: download
+          image: registry.access.redhat.com/ubi9/python-311:latest@sha256:7b6cb58d3ff034df7b300800bd89a469d9bd2f739d43250d76b9c9e805307ab5
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: 0
+            allowPrivilegeEscalation: false
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -euo pipefail
+              echo "Downloading Qwen/Qwen2.5-Coder-7B-Instruct into /models ..."
+              pip install -q "huggingface_hub==0.26.5"
+              python - <<'PY'
+              from huggingface_hub import snapshot_download
+              snapshot_download(
+                  repo_id="Qwen/Qwen2.5-Coder-7B-Instruct",
+                  local_dir="/models",
+                  local_dir_use_symlinks=False,
+              )
+              print("snapshot_download finished")
+              PY
+              echo "Download complete. Listing:"
+              du -sh /models
+              ls -la /models | head -40
+          volumeMounts:
+            - name: model
+              mountPath: /models
+          resources:
+            requests:
+              cpu: "1"
+              memory: 4Gi
+            limits:
+              cpu: "4"
+              memory: 8Gi
+      volumes:
+        - name: model
+          persistentVolumeClaim:
+            claimName: qwen25-7b-model

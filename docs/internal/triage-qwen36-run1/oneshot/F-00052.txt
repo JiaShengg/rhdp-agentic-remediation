@@ -1,0 +1,5 @@
+⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
+
+session_id: local-0058216fda0455d2e48d6ca5cf468bccbeb83716b2e899be76664346003f975a
+Recorded as **TP** (true positive). The vulnerability at `BenchmarkTest00052.java:48` directly concatenates user-controlled input into a stored procedure call string without sanitization or parameterization, creating a genuine SQL injection path.
+exit=0

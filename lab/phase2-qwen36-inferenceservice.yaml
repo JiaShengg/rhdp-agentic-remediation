@@ -1,0 +1,68 @@
+# Qwen3.6-27B-FP8 on one L40S.
+# Serve flags are the model card's tool-call command
+# (reasoning-parser qwen3, enable-auto-tool-choice, tool-call-parser qwen3_coder)
+# with max-model-len reduced from 262144. The card's tensor-parallel-size 8
+# is omitted: this pool has one GPU, so vLLM's default of 1 applies.
+# 65536 fit at 4.52x concurrency. 131072 fit at 2.41x, so two sessions still fit and this file keeps 131072.
+---
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: qwen36-27b
+  namespace: remediation-pov
+  annotations:
+    openshift.io/display-name: Qwen3.6-27B-FP8
+    serving.kserve.io/deploymentMode: RawDeployment
+    security.opendatahub.io/enable-auth: "false"
+  labels:
+    opendatahub.io/dashboard: "true"
+    app.kubernetes.io/part-of: remediation-pov
+spec:
+  predictor:
+    minReplicas: 1
+    maxReplicas: 1
+    nodeSelector:
+      rhdp.redhat.com/gpu: l40s
+    tolerations:
+      - effect: NoSchedule
+        key: nvidia.com/gpu
+        operator: Equal
+        value: "True"
+    model:
+      modelFormat:
+        name: vLLM
+      runtime: vllm-qwen36
+      storageUri: pvc://qwen36-27b-fp8/
+      args:
+        - --max-model-len=131072
+        - --max-num-seqs=2
+        - --kv-cache-dtype=fp8
+        - --gpu-memory-utilization=0.92
+        - --enable-prefix-caching
+        - --reasoning-parser=qwen3
+        - --enable-auto-tool-choice
+        - --tool-call-parser=qwen3_coder
+      resources:
+        requests:
+          cpu: "2"
+          memory: 16Gi
+          nvidia.com/gpu: "1"
+        limits:
+          cpu: "6"
+          memory: 48Gi
+          nvidia.com/gpu: "1"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qwen36-27b-openai
+  namespace: remediation-pov
+  labels:
+    app.kubernetes.io/part-of: remediation-pov
+spec:
+  selector:
+    app: isvc.qwen36-27b-predictor
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080

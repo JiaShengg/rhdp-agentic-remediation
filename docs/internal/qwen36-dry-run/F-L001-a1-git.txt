@@ -1,0 +1,31 @@
+--- status ---
+--- branch ---
+fix/F-L001
+--- log ---
+1ebf448 Fix F-L001: upgrade api-ldap-model 2.1.7 -> 2.1.9 (CVE-2026-103885)
+7d94047 lab workspace seed
+--- branches ---
+* fix/F-L001 1ebf448 Fix F-L001: upgrade api-ldap-model 2.1.7 -> 2.1.9 (CVE-2026-103885)
+  main       7d94047 lab workspace seed
+--- diff main ---
+ pom.xml     | 2 +-
+ rewrite.yml | 9 +++++++++
+ 2 files changed, 10 insertions(+), 1 deletion(-)
+--- diff main patch ---
+diff --git a/pom.xml b/pom.xml
+index 2e28e93..0cbb0e3 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -670,7 +670,7 @@
+         <dependency>
+             <groupId>org.apache.directory.api</groupId>
+             <artifactId>api-ldap-model</artifactId>
+-            <version>2.1.7</version>
++            <version>2.1.9</version>
+         </dependency>
+ 
+         <dependency>
+
+--- ldap ---
+672:            <artifactId>api-ldap-model</artifactId>
+673-            <version>2.1.9</version>

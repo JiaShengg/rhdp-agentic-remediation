@@ -1,0 +1,14 @@
+.DS_Store
+*.pyc
+__pycache__/
+lab.local.md
+*.local.md
+.env
+*.env
+*.pem
+*.key
+secrets/
+scripts/scan-patterns.local
+
+# Live L40S MachineSet (AMI, subnet, IAM profile, infra id).
+lab/machineset-l40s.yaml

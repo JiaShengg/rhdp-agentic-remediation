@@ -1,0 +1,7 @@
+⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
+
+session_id: local-f580f2107fea3a5f5e2700773cb113af5e5b169ca00fc6debab3de7dc7bd57fe
+Decision recorded: **FP** (false positive).
+
+**Reason:** `param` (user input from the `Referer` header) is added to the list at index 1, but `valuesList.remove(0)` removes the first element and shifts indices. `valuesList.get(1)` then reads `"moresafe"` (a hardcoded constant) — the user-controlled `param` sits at index 0 after removal and is never consumed. The sink `printf(bar, obj)` never receives tainted data.
+exit=0

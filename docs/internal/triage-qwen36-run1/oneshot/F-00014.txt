@@ -1,0 +1,5 @@
+⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
+
+session_id: local-f89df580b5c1fae2a52c4e8fa01e789ff1f487747476ff021541c74b7cb66951
+Recorded. F-00014 is a **true positive**: the `Referer` header value flows unsanitized into `response.getWriter().format()`, allowing reflected XSS.
+exit=0

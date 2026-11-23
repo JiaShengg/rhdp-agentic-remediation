@@ -1,0 +1,92 @@
+# Template for a one-node L40S pool (g6e.2xlarge, 1x NVIDIA L40S).
+# Copy to lab/machineset-l40s.yaml (gitignored) and fill placeholders from a
+# live worker MachineSet. See docs/internal/setup-runbook.md.
+apiVersion: machine.openshift.io/v1beta1
+kind: MachineSet
+metadata:
+  name: <INFRA_ID>-worker-gpu-l40s-<ZONE>
+  namespace: openshift-machine-api
+  labels:
+    machine.openshift.io/cluster-api-cluster: <INFRA_ID>
+    rhdp.redhat.com/gpu: l40s
+  annotations:
+    capacity.cluster-autoscaler.kubernetes.io/labels: kubernetes.io/arch=amd64
+    machine.openshift.io/GPU: "1"
+    machine.openshift.io/memoryMb: "65536"
+    machine.openshift.io/vCPU: "8"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      machine.openshift.io/cluster-api-cluster: <INFRA_ID>
+      machine.openshift.io/cluster-api-machine-role: worker-gpu
+      machine.openshift.io/cluster-api-machine-type: worker-gpu
+      machine.openshift.io/cluster-api-machineset: <INFRA_ID>-worker-gpu-l40s-<ZONE>
+  template:
+    metadata:
+      labels:
+        agnosticd.redhat.com/machineset-group: worker-gpu
+        machine.openshift.io/cluster-api-cluster: <INFRA_ID>
+        machine.openshift.io/cluster-api-machine-role: worker-gpu
+        machine.openshift.io/cluster-api-machine-type: worker-gpu
+        machine.openshift.io/cluster-api-machineset: <INFRA_ID>-worker-gpu-l40s-<ZONE>
+        rhdp.redhat.com/gpu: l40s
+        node-role.kubernetes.io/worker-gpu: ""
+    spec:
+      metadata:
+        labels:
+          rhdp.redhat.com/gpu: l40s
+          node-role.kubernetes.io/worker-gpu: ""
+      taints:
+        - effect: NoSchedule
+          key: nvidia.com/gpu
+          value: "True"
+      providerSpec:
+        value:
+          apiVersion: machine.openshift.io/v1beta1
+          kind: AWSMachineProviderConfig
+          instanceType: g6e.2xlarge
+          ami:
+            id: <AMI_ID>
+          placement:
+            availabilityZone: <ZONE>
+            region: <REGION>
+          subnet:
+            filters:
+              - name: "tag:Name"
+                values:
+                  - <SUBNET_ID>
+          securityGroups:
+            - filters:
+                - name: "tag:Name"
+                  values:
+                    - <SECURITY_GROUP>
+            - filters:
+                - name: "tag:Name"
+                  values:
+                    - <SECURITY_GROUP>
+          iamInstanceProfile:
+            id: <IAM_INSTANCE_PROFILE>
+          credentialsSecret:
+            name: aws-cloud-credentials
+          userDataSecret:
+            name: worker-user-data
+          blockDevices:
+            - ebs:
+                volumeSize: 250
+                volumeType: gp2
+          tags:
+            - name: kubernetes.io/cluster/<INFRA_ID>
+              value: owned
+            - name: Stack
+              value: ocp4-cluster-<GUID>
+            - name: env_type
+              value: ocp4-cluster
+            - name: guid
+              value: <GUID>
+            - name: owner
+              value: unknown
+            - name: platform
+              value: rhpds
+            - name: uuid
+              value: <UUID>

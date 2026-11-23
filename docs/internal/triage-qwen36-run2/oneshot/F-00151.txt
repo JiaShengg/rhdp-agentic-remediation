@@ -1,0 +1,5 @@
+⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
+
+session_id: local-68bcdb0caa58ff99d5b991c72e4386c1beb2f8dce9ea7fe051569137c5ffe545
+Done. Recorded F-00151 as **FP** (false positive). The user input from the `Referer` header is placed in a list but never reaches the sink — `valuesList.get(1)` after `remove(0)` returns the hardcoded `"moresafe"` string, breaking the taint flow.
+exit=0

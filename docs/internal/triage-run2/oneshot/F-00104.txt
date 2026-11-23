@@ -1,0 +1,12 @@
+⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
+
+session_id: local-fd551615b2fe16ea1bafe3e2a0c199c1325a680eeb6790d8f50770e0be511b5d
+```json
+{
+  "name": "read_file",
+  "arguments": {
+    "path": "pom.xml"
+  }
+}
+```
+exit=0

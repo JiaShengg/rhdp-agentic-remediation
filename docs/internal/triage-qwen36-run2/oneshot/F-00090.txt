@@ -1,0 +1,7 @@
+⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
+
+session_id: local-e46cd6b6859a48e34d02c72655c497803cba6882141fd738b6e7766b64e0d465
+Done. Recorded F-00090 as **false positive**.
+
+**Reason:** The `if` condition `(7*42) - num > 200` evaluates to `208 > 200` (always true), so `bar` is always the constant `"This_should_always_happen"`. User-controlled cookie input never reaches `exec()`.
+exit=0

@@ -1,0 +1,6 @@
+finding        decision truth    result   build
+--------------------------------------------------------
+F-00011        FP       TP       WRONG    Y
+--------------------------------------------------------
+correct=0 wrong=1 unresolved=0 n=1
+build_pass_rate=1/1

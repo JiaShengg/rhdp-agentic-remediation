@@ -1,0 +1,5 @@
+⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
+
+session_id: local-a56915ab4bd316a4c3063b906f03fba51504774cee464ce9a064eb478e75db84
+Recorded. Decision: **FP**. The condition `(7*42) - 86 > 200` always evaluates to `208 > 200 = true`, so `bar` is always the constant `"This_should_always_happen"`. The untrusted cookie value in `param` never reaches `r.exec()` at runtime — the else branch is dead code.
+exit=0

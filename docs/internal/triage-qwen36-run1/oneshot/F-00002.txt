@@ -1,0 +1,7 @@
+⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
+
+session_id: local-c9bcbbf0decb812a71cbc293a769974c048f9a88439bde314cc150713dac28aa
+**F-00002: TP (True Positive)**
+
+The `doPost` method reads `param` from a user-controlled cookie (line 61), URL-decodes it, and concatenates it directly into a file path (`TESTFILES_DIR + param` at line 71) with no sanitization. That path is then used to open a `FileOutputStream` (line 73), allowing an attacker to write to arbitrary files by supplying traversal sequences in the cookie value.
+exit=0

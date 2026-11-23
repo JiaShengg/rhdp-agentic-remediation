@@ -1,0 +1,11 @@
+⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
+
+session_id: local-396e622da175a4fd80f95a224c6c0bb87f8ad0bcc4a3c50de8aae64b1c37dfaf
+Recorded as **TP** (true positive). The flow is:
+
+- **Source:** `request.getHeader("BenchmarkTest00008")` — user-controlled HTTP header (line 46)
+- **Sink:** `connection.prepareCall(sql)` — raw SQL execution (line 57)
+- **Vulnerability:** `param` is directly concatenated into `{call ...}` at line 52 with zero sanitization or parameterization
+
+An attacker supplying a malicious header value can inject arbitrary SQL.
+exit=0
