@@ -1,20 +1,31 @@
 #!/usr/bin/env python3
-"""HTTP MCP server bound to the developer workspace.
+"""HTTP Model Context Protocol server bound to the developer workspace.
 
-Tools: read_file, apply_patch, git_diff, run_build, run_tests.
+Tools: read_file, apply_patch, git_diff, run_build, run_tests, rescan.
 Every call appends one JSON line to the audit file. Paths stay inside
-/workspace/BenchmarkJava.
+the workspace root.
+
+A diff that touches a file with no finding is rejected by design.
+The server restores the previous bytes and returns status rejected.
+
+If WORKSPACE_MCP_TOKEN is set, every request except /health must send
+Authorization: Bearer and that token. If the variable is unset, requests
+are accepted as before. The lab manifests do not set the variable.
 """
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 import json
 import os
 import re
 import subprocess
+import threading
 import urllib.error
 import urllib.request
 import uuid
+from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -26,6 +37,16 @@ STUB = os.environ.get(
     "http://stub-findings-mcp.remediation-pov.svc.cluster.local",
 ).rstrip("/")
 PROTOCOL = "2025-03-26"
+_MUTATION = threading.Lock()
+_FORBIDDEN_DIFF = (
+    "rename from",
+    "rename to",
+    "copy from",
+    "copy to",
+    "new mode",
+    "old mode",
+    "GIT binary patch",
+)
 
 TOOLS = [
     {
@@ -86,11 +107,67 @@ TOOLS = [
 ]
 
 
-def _audit(tool: str, ok: bool, detail: str) -> None:
+def _audit(
+    tool: str,
+    ok: bool,
+    detail: str,
+    finding_ids: list[str] | None = None,
+    diff: str | None = None,
+    session: str | None = None,
+) -> None:
     AUDIT.parent.mkdir(parents=True, exist_ok=True)
-    record = {"tool": tool, "ok": ok, "detail": detail[:2000]}
+    record = {
+        "ts": datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z"),
+        "tool": tool,
+        "ok": ok,
+        "finding_ids": list(finding_ids or []),
+        "session": Handler.session if session is None else session,
+        "detail": detail[:2000],
+    }
+    if diff is not None:
+        record["diff_sha256"] = hashlib.sha256(diff.encode()).hexdigest()
     with AUDIT.open("a", encoding="utf-8") as fh:
         fh.write(json.dumps(record) + "\n")
+
+
+def _authorized(header: str) -> bool:
+    token = os.environ.get("WORKSPACE_MCP_TOKEN", "")
+    if not token:
+        return True
+    expected = f"Bearer {token}".encode()
+    got = (header or "").encode()
+    if len(got) != len(expected):
+        return False
+    return hmac.compare_digest(got, expected)
+
+
+def _reject_diff_headers(unified_diff: str) -> None:
+    for line in unified_diff.splitlines():
+        for token in _FORBIDDEN_DIFF:
+            if token in line:
+                raise ValueError(f"diff contains a forbidden header: {token}")
+        if re.search(r"\bmode\s+120000\b", line):
+            raise ValueError("diff contains a forbidden header: mode 120000")
+
+
+def _finding_ids_from_result(name: str, arguments: dict, text: str) -> list[str]:
+    if name == "rescan":
+        finding_id = (arguments or {}).get("finding_id")
+        return [finding_id] if isinstance(finding_id, str) and finding_id else []
+    if name != "apply_patch":
+        return []
+    try:
+        payload = json.loads(text)
+    except json.JSONDecodeError:
+        return []
+    found: list[str] = []
+    for item in payload.get("rescan") or []:
+        if not isinstance(item, dict):
+            continue
+        finding_id = item.get("finding_id") or item.get("id")
+        if isinstance(finding_id, str) and finding_id and finding_id not in found:
+            found.append(finding_id)
+    return found
 
 
 def _resolve(path: str) -> Path:
@@ -210,6 +287,12 @@ def _failed_checks(build: dict, rescans: list) -> list[str]:
 def apply_patch(unified_diff: str) -> str:
     if not isinstance(unified_diff, str) or "--- " not in unified_diff or "+++ " not in unified_diff:
         raise ValueError("unified_diff required")
+    _reject_diff_headers(unified_diff)
+    with _MUTATION:
+        return _apply_patch_locked(unified_diff)
+
+
+def _apply_patch_locked(unified_diff: str) -> str:
     unified_diff = _normalize_diff(unified_diff)
     paths: list[str] = []
     for line in unified_diff.splitlines():
@@ -293,7 +376,7 @@ def _diff_paths(unified_diff: str) -> list[str]:
 
 def _compile_result() -> dict:
     try:
-        return {"ok": True, "output": run_build()}
+        return {"ok": True, "output": _run_build_unlocked()}
     except Exception as exc:  # noqa: BLE001
         return {"ok": False, "output": str(exc)[-4000:]}
 
@@ -320,6 +403,7 @@ def rescan_finding(finding_id: str) -> dict:
                 "status": result.get("status"),
             }
         ),
+        finding_ids=[finding_id],
     )
     return result
 
@@ -341,10 +425,13 @@ def _rescan_changed(unified_diff: str) -> list:
     results = []
     for finding_id in matched:
         try:
-            results.append(rescan_finding(finding_id))
+            result = rescan_finding(finding_id)
+            if isinstance(result, dict):
+                result.setdefault("finding_id", finding_id)
+            results.append(result)
         except Exception as exc:  # noqa: BLE001
             err = {"finding_id": finding_id, "ok": False, "error": str(exc)}
-            _audit("rescan", False, json.dumps(err))
+            _audit("rescan", False, json.dumps(err), finding_ids=[finding_id])
             results.append(err)
     return results
 
@@ -363,7 +450,7 @@ def git_diff() -> str:
     return proc.stdout[-16000:]
 
 
-def run_build() -> str:
+def _run_build_unlocked() -> str:
     mvn = os.environ.get("MVN", "mvn")
     proc = subprocess.run(
         [mvn, "-q", "-DskipTests", "compile"],
@@ -378,9 +465,12 @@ def run_build() -> str:
     return tail or f"mvn exit {proc.returncode}"
 
 
-def run_tests(test_class: str) -> str:
-    if not isinstance(test_class, str) or not re.fullmatch(r"[A-Za-z0-9_.]+", test_class):
-        raise ValueError("test_class must be a Java class name")
+def run_build() -> str:
+    with _MUTATION:
+        return _run_build_unlocked()
+
+
+def _run_tests_unlocked(test_class: str) -> str:
     mvn = os.environ.get("MVN", "mvn")
     proc = subprocess.run(
         [mvn, "-q", f"-Dtest={test_class}", "test"],
@@ -393,6 +483,13 @@ def run_tests(test_class: str) -> str:
     if proc.returncode != 0:
         raise RuntimeError(tail or f"mvn exit {proc.returncode}")
     return tail or f"mvn exit {proc.returncode}"
+
+
+def run_tests(test_class: str) -> str:
+    if not isinstance(test_class, str) or not re.fullmatch(r"[A-Za-z0-9_.]+", test_class):
+        raise ValueError("test_class must be a Java class name")
+    with _MUTATION:
+        return _run_tests_unlocked(test_class)
 
 
 def _call(name: str, arguments: dict) -> str:
@@ -444,9 +541,20 @@ class Handler(BaseHTTPRequestHandler):
             return
         self._send(200, raw, "application/json")
 
+    def _require_auth(self) -> bool:
+        if _authorized(self.headers.get("Authorization", "")):
+            return True
+        length = int(self.headers.get("Content-Length", "0") or "0")
+        if length:
+            self.rfile.read(length)
+        self._send(401, b"unauthorized\n", "text/plain")
+        return False
+
     def do_POST(self) -> None:  # noqa: N802
         if self.path.split("?", 1)[0] not in ("/mcp", "/"):
             self._send(404, b"not found", "text/plain")
+            return
+        if not self._require_auth():
             return
         length = int(self.headers.get("Content-Length", "0"))
         try:
@@ -481,15 +589,31 @@ class Handler(BaseHTTPRequestHandler):
             return
         if method == "tools/call":
             name = params.get("name") or ""
+            arguments = params.get("arguments") or {}
+            diff = arguments.get("unified_diff") if name == "apply_patch" else None
+            if not isinstance(diff, str):
+                diff = None
             try:
-                text = _call(name, params.get("arguments") or {})
-                _audit(name, True, text)
+                text = _call(name, arguments)
+                _audit(
+                    name,
+                    True,
+                    text,
+                    finding_ids=_finding_ids_from_result(name, arguments, text),
+                    diff=diff,
+                )
                 self._rpc_result(
                     msg_id,
                     {"content": [{"type": "text", "text": text}], "isError": False},
                 )
             except Exception as exc:  # noqa: BLE001
-                _audit(name or "unknown", False, str(exc))
+                _audit(
+                    name or "unknown",
+                    False,
+                    str(exc),
+                    finding_ids=_finding_ids_from_result(name, arguments, ""),
+                    diff=diff,
+                )
                 self._rpc_result(
                     msg_id,
                     {"content": [{"type": "text", "text": str(exc)}], "isError": True},
@@ -504,9 +628,13 @@ class Handler(BaseHTTPRequestHandler):
         if self.path.split("?", 1)[0] == "/health":
             self._send(200, b"ok\n", "text/plain")
             return
+        if not self._require_auth():
+            return
         self._send(405, b"post only", "text/plain")
 
     def do_DELETE(self) -> None:  # noqa: N802
+        if not self._require_auth():
+            return
         self._send(200, b"", "application/json")
 
 
