@@ -89,12 +89,12 @@ Those two file views are the copy mounted in the agent pod. The remote workspace
 | | This lab | The POV |
 | --- | --- | --- |
 | Model | Qwen3.6-27B FP8, 128K context, one L40S, served by vLLM | Same model and context, L40S or A100-class |
-| Scanner | Stub MCP over a small BenchmarkJava set | Fortify and Sonatype through partner MCP servers |
+| Scanner | Stub MCP over a small BenchmarkJava set | Fortify and Sonatype, integration method (MCP or REST) agreed with the scanner partner |
 | Rescan | Stub behaviour check. The response includes `still_present`, `checks`, and `stub: true` | Fortify rescan plus human review |
 | Build | `mvn -q -DskipTests compile` in the workspace that holds the file | Maven build and the tests that are available |
 | Edit | Workspace MCP on a pod the agent does not mount. The tool compiles and rescans before it keeps the patch | Developer workspace, with the same gate |
-| Handover | Decision plus diff. The agent does not merge | Pull request. The agent does not merge |
-| Access | Dashboard basic auth, NetworkPolicy, EgressFirewall | Keycloak, Authorino, an MCP gateway, scoped Git permissions |
+| Handover | Decision plus diff. The agent does not merge | Reviewed diff in the developer workspace. The agent does not merge |
+| Access | Dashboard basic auth, NetworkPolicy, EgressFirewall | Role-based access and network policy, detail agreed at kickoff |
 | Library finding | One OpenRewrite `UpgradeDependencyVersion` recipe | Sonatype findings across the repository |
 
 ## Repository
