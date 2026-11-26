@@ -51,7 +51,7 @@ sequenceDiagram
   alt Compile failed, or the finding is still present
     Workspace->>Workspace: Restore the previous file bytes
     Workspace-->>Agent: status rejected, with the failed checks
-    Agent->>Workspace: One retry that addresses those checks
+    Agent->>Workspace: One retry aimed at those checks
   else Compile exited 0 and the finding is gone
     Workspace-->>Agent: status applied
     Agent-->>Dev: The fix is applied
@@ -62,8 +62,8 @@ sequenceDiagram
 2. The developer picks an option. The agent sends one unified diff to `apply_patch`.
 3. The workspace MCP applies that diff, runs `mvn -q -DskipTests compile`, reads the changed file, and posts those bytes to `/rescan`.
 4. Status `applied` means the compile exited 0 and every rescan reported `still_present` false. Only then may the agent tell the developer the fix is applied.
-5. Any other result is status `rejected`. The MCP writes the pre-patch bytes back and returns the failed check names. The agent may try one new diff aimed at those checks.
-6. If the second try is also `rejected`, the agent stops and hands the finding back with the reason. A false positive is not patched. A stored-procedure name cannot be bound with `?`, so that finding is handed back the same way.
+5. Any other result is status `rejected`. The workspace MCP writes the pre-patch bytes back and returns the failed check names. Recorded runs include one new diff aimed at those checks.
+6. If that second try is also `rejected`, the agent stops and hands the finding back with the reason. A recorded run ended that way. A false positive is not patched. A stored procedure name cannot be bound with `?`, so that finding is handed back the same way.
 7. The agent records the decision on the findings MCP. It does not merge.
 
 A kept SQL fix uses the original statement, puts `?` in place of the concatenated value, and binds that value with `PreparedStatement` and `setString`. A `?` inside quotes is not a placeholder. The workspace does not keep that edit.
