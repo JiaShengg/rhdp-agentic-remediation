@@ -1,5 +1,0 @@
-⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
-
-session_id: local-d94e817c64688a2d63ef90db9af9d7aba9b04ccbdc9061be4d870ab648d8d8b3
-Recorded **FP** for F-00064. The ternary at line 71 always evaluates true `(232 > 200)`, so `bar` is always the hardcoded constant `"This_should_always_happen"` — user input from the cookie never reaches the `FileOutputStream` sink.
-exit=0

@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 # Run Hermes oneshot triage for every finding in findings.public.json.
 # Usage:
-#   NS=remediation-lab OUT=docs/internal/triage-run1 ./scripts/run_triage_batch.sh
+#   NS=remediation-pov OUT=/tmp/triage-run ./scripts/run_triage_batch.sh
 #
 # Writes:
-#   $OUT/decisions.jsonl   — stub decisions collected after the batch
-#   $OUT/oneshot/<id>.txt  — per-finding hermes transcript tails
-#   $OUT/summary.txt       — ids with/without decisions
+#   $OUT/decisions.jsonl   stub decisions collected after the batch
+#   $OUT/oneshot/<id>.txt  per-finding transcript tails
+#   $OUT/summary.txt       ids with and without decisions
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-NS="${NS:-remediation-lab}"
-OUT="${OUT:-$ROOT/docs/internal/triage-run}"
+NS="${NS:-remediation-pov}"
+OUT="${OUT:-/tmp/triage-run}"
 CATALOG="${CATALOG:-$ROOT/lab/stub-findings-mcp/findings.public.json}"
 MAX_TURNS="${MAX_TURNS:-12}"
 
@@ -26,7 +26,7 @@ python3 - <<PY
 import json
 from pathlib import Path
 data = json.loads(Path(r"""$CATALOG""").read_text())
-# Triage scores against Benchmark expectedresults — skip library/Sonatype cases.
+# Triage scores against Benchmark expectedresults. Skip library and Sonatype cases.
 cases = [
     c for c in data["demo_cases"]
     if c.get("category") != "library" and c.get("tool") != "stub-sonatype"

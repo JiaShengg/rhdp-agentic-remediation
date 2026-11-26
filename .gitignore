@@ -12,3 +12,6 @@ scripts/scan-patterns.local
 
 # Live L40S MachineSet (AMI, subnet, IAM profile, infra id).
 lab/machineset-l40s.yaml
+
+# Local demo recordings. Never commit.
+recordings/

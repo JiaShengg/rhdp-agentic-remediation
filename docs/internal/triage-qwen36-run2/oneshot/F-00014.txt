@@ -1,7 +1,0 @@
-⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
-
-session_id: local-cc90f058b8606f2f07594f1242902b57aa8051cad42c7fbc80f60f376012b98d
-Decision recorded: **TP (True Positive)** for F-00014.
-
-**Summary:** User-controlled input from the `Referer` header (`request.getHeaders("Referer")`) flows directly into `response.getWriter().format(param, obj)` at line 56 without any HTML encoding or sanitization. The response is set to `text/html`, and the browser's XSS filter is explicitly disabled (`X-XSS-Protection: 0`). This is a deliberate OWASP Benchmark XSS test case.
-exit=0

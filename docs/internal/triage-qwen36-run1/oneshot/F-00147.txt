@@ -1,7 +1,0 @@
-⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
-
-session_id: local-229e64382deb851403807eb392195c952629f4bd4c13c883363e453518feb492
-Recorded **FP** for F-00147.
-
-**Reason:** The user-controlled `param` is added at index 1 of the list, but `valuesList.remove(0)` shifts elements down, so `valuesList.get(1)` returns the hardcoded `"moresafe"`. The `bar` variable never carries untrusted input to the sink — the scanner couldn't track data flow through `ArrayList.remove()`/`get()` operations.
-exit=0

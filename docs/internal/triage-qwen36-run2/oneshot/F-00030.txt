@@ -1,7 +1,0 @@
-⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
-
-session_id: local-4709f7803bb4440eda1099137015545864c8b2ff2be47d0ea63978deb6a68a50
-Done. Decision: **TP** (true positive).
-
-User-controlled input from `request.getParameterMap()` flows directly into `response.getWriter().printf()` as the format string. The literal format string text (minus any format specifiers) is written unescaped to the HTML response body. The XSS protection header is explicitly disabled. An attacker can inject `<script>` or event handler payloads via the `BenchmarkTest00030` parameter that execute in the victim's browser.
-exit=0

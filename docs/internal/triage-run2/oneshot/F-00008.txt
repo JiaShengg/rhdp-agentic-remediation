@@ -1,7 +1,0 @@
-⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
-It appears there was an error recording the decision. Let's try again with the correct format.
-
-Please confirm the decision (true_positive or false_positive) and provide a reason.
-
-session_id: local-d77e514291051dede8bceed9689dfa5c060001ae35ad5a7c8be0ebdbb7dc69e4
-exit=0

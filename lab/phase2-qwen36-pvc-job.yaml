@@ -72,7 +72,9 @@ spec:
               PY
               echo "Download complete. Listing:"
               du -sh /models
-              ls -la /models | head -40
+              # head closes the pipe early. With pipefail that is exit 141 and fails the Job.
+              ls -la /models > /tmp/model-list.txt
+              head -40 /tmp/model-list.txt
           volumeMounts:
             - name: model
               mountPath: /models

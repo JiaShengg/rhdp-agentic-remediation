@@ -1,5 +1,0 @@
-⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
-
-session_id: local-978c55373a084f032f0f9f65b59c2597b44063cac7cdbb0060d27be59943c8d9
-Recorded F-00051 as **TP** (true positive). The vulnerability is straightforward: user input flows unsanitized into a shell command, enabling arbitrary command execution.
-exit=0

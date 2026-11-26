@@ -1,5 +1,0 @@
-⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
-
-session_id: local-4ee6cf37ef15df6022ca7fd7ed20de596e561c3035301ddd31c63c1c5b916d5d
-Decision recorded: **TP** (true positive). The user-controlled header value reaches `sh -c`/`cmd.exe /c` unsanitized at line 62, enabling arbitrary command injection.
-exit=0

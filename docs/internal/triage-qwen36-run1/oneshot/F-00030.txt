@@ -1,7 +1,0 @@
-⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
-
-session_id: local-9e476fc6e89a6f26df115b29f9b788cd51cc1abe0a0abbb1d1a0cf10ec263ebb
-**Decision recorded: TP (True Positive)**
-
-User-controlled input flows from `request.getParameterMap()` into `response.getWriter().printf()` without any encoding or sanitization, making this a genuine reflected XSS vulnerability.
-exit=0

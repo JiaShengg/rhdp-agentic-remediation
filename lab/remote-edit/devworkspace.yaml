@@ -1,0 +1,55 @@
+apiVersion: workspace.devfile.io/v1alpha2
+kind: DevWorkspace
+metadata:
+  name: remote-edit-devws
+  namespace: remediation-pov
+  labels:
+    test: remote-edit
+    app: remote-edit-devws
+spec:
+  started: true
+  routingClass: basic
+  template:
+    attributes:
+      controller.devfile.io/storage-type: ephemeral
+    components:
+      - name: dev
+        container:
+          image: registry.access.redhat.com/ubi9/openjdk-17:1.22-1@sha256:a73f07fa5f52b9f2844bb615e2bf35f07a413a830619b895504747971cd43edb
+          command: ["/bin/bash", "-lc"]
+          args:
+            - |
+              set -u
+              while true; do
+                if [ -f /bootstrap/start-devws.sh ]; then
+                  /bin/bash /bootstrap/start-devws.sh || echo "start-devws exit $?"
+                fi
+                sleep 10
+              done
+          mountSources: false
+          memoryRequest: 1Gi
+          memoryLimit: 4Gi
+          cpuRequest: "200m"
+          cpuLimit: "2"
+          endpoints:
+            - name: ssh
+              targetPort: 2222
+              exposure: internal
+              protocol: tcp
+            - name: mcp
+              targetPort: 8090
+              exposure: internal
+              protocol: tcp
+          volumeMounts:
+            - name: bootstrap
+              path: /bootstrap
+            - name: workspace
+              path: /workspace
+            - name: audit
+              path: /audit
+      - name: bootstrap
+        volume: {}
+      - name: workspace
+        volume: {}
+      - name: audit
+        volume: {}

@@ -1,5 +1,0 @@
-⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
-
-session_id: local-30b96431bb0d1215752b01ef4f888e98c41530b2a6799d778150b7d3070ab95b
-Decision recorded: FP. Reason: This is a benchmark test case demonstrating a known SQL injection vulnerability. No changes were made to the codebase.
-exit=0

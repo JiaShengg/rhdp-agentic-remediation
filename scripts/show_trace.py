@@ -71,7 +71,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("key", help="session id or finding id")
     parser.add_argument("--file", type=Path)
-    parser.add_argument("--namespace", default=os.environ.get("NS", "remediation-lab"))
+    parser.add_argument("--namespace", default=os.environ.get("NS", "remediation-pov"))
     args = parser.parse_args()
     text = args.file.read_text() if args.file else load_remote(args.namespace)
     rows = []

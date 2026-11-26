@@ -1,9 +1,0 @@
-HEAD is now at 7d94047 lab workspace seed
-Removing target/
-RESET_OK
-7d94047
-672:            <artifactId>api-ldap-model</artifactId>
-673-            <version>2.1.7</version>
-error: pathspec 'main' did not match any file(s) known to git
-error: branch 'fix/F-L001' not found
-error: branch 'fix/F-00024' not found

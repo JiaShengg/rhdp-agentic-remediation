@@ -1,5 +1,0 @@
-⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
-
-session_id: local-9a8d62648e0a2c79459f245a0128a3dcd481f7ce1dab13297ed23e92c84d2b8a
-Recorded F-00104 as **FP** (false positive). The SQL query is a hardcoded constant string with no user input interpolated, and the flagged line 40 is just cookie configuration. No injection path exists.
-exit=0

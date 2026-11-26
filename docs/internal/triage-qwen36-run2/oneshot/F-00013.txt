@@ -1,7 +1,0 @@
-⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
-
-session_id: local-bdc9fcdf3636489e97643175fd6048f2f4cffe4b3e93bc61f07a4b6c8d0c8e98
-Done. Recorded F-00013 as **TP** (true positive).
-
-The vulnerability is a reflected XSS: untrusted `Referer` header input flows unsanitized into the HTML response via `response.getWriter().format()` at line 56. The `URLDecoder` on line 52 can even decode obfuscated payloads, and `X-XSS-Protection` is explicitly disabled on line 54.
-exit=0

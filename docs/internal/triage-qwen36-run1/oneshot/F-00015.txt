@@ -1,7 +1,0 @@
-⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
-
-session_id: local-497e2f80440257d88b1b408559ffaa5c904cf3a3f367c54835ada7a801466c79
-Recorded. Decision: **TP** (true positive).
-
-Untrusted input from an HTTP header is passed directly into a shell command (`sh -c` / `cmd.exe /c`) without any validation or escaping, enabling arbitrary OS command injection.
-exit=0

@@ -281,6 +281,8 @@ spec:
               value: /opt/data
             - name: HOME
               value: /opt/data
+            - name: HERMES_CWD
+              value: /opt/data/workspace/BenchmarkJava
             - name: PYTHONUNBUFFERED
               value: "1"
             - name: STUB_FINDINGS_URL

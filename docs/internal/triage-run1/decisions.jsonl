@@ -1,3 +1,0 @@
-{"ts": "2026-11-22T15:28:49.276055+00:00", "finding_id": "F-00008", "decision": "FP", "reason": "This is a benchmark test case demonstrating a known SQL injection vulnerability.", "changed_files": [], "build_ok": true}
-{"ts": "2026-11-22T15:31:39.005575+00:00", "finding_id": "F-00014", "decision": "TP", "reason": "Indicates a significant XSS vulnerability.", "changed_files": [], "build_ok": false}
-{"ts": "2026-11-22T15:34:14.934375+00:00", "finding_id": "F-00006", "decision": "FP", "reason": "This is a known benchmark test case demonstrating a common security vulnerability.", "changed_files": [], "build_ok": true}

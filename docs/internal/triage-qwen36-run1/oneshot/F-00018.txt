@@ -1,7 +1,0 @@
-⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
-
-session_id: local-9c538e59e1e1f69bb481e8cc784666760578da8cf02b858ebd1b0e9c77a159b4
-Decision recorded: **TP (True Positive)**.
-
-The HTTP header value flows unchecked into a string-concatenated SQL `INSERT` statement executed via `Statement.executeUpdate` — a textbook SQL injection.
-exit=0

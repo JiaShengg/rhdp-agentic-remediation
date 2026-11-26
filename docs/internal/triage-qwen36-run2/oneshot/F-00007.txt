@@ -1,8 +1,0 @@
-⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
-
-session_id: local-84192d8a33b2fb247f22b891589cf1755bc8d82761786235ab186553cbdc2cf1
-Decision recorded: **TP** (True Positive).
-
-**Summary:**
-- `src/main/java/org/owasp/benchmark/testcode/BenchmarkTest00007.java:61` — `param` (from `request.getHeader()`) flows unsanitized into `Runtime.exec(args, argsEnv)` as an environment variable. This is a genuine command injection vulnerability. An attacker can inject values like `LD_PRELOAD` or manipulate `PATH` to control the executed process.
-exit=0

@@ -1,0 +1,113 @@
+# Path B Hermes. Local shell and file tools are off.
+# Source changes go through the workspace MCP server.
+# This file is not the live hermes-agent config.
+_config_version: 54
+
+model:
+  default: "qwen36-27b"
+  provider: "custom"
+  base_url: "http://qwen36-27b-openai.remediation-pov.svc.cluster.local/v1"
+  api_key: "not-needed"
+  api_mode: chat_completions
+  context_length: 131072
+
+moa:
+  default_preset: default
+  presets:
+    default:
+      enabled: false
+      reference_models: []
+      aggregator:
+        provider: custom
+        model: qwen36-27b
+
+auxiliary:
+  vision:
+    provider: main
+    model: ""
+  web_extract:
+    provider: main
+    model: ""
+  compression:
+    provider: main
+    model: ""
+  title_generation:
+    provider: main
+    model: ""
+  curator:
+    provider: main
+    model: ""
+  background_review:
+    provider: main
+    model: ""
+  skills_hub:
+    provider: main
+    model: ""
+  mcp:
+    provider: main
+    model: ""
+  flush_memories:
+    provider: main
+    model: ""
+  session_search:
+    provider: main
+    model: ""
+
+fallback_providers: []
+
+custom_providers:
+  - name: in-cluster-vllm
+    base_url: "http://qwen36-27b-openai.remediation-pov.svc.cluster.local/v1"
+    model: qwen36-27b
+    extra_body:
+      top_k: 20
+      min_p: 0.0
+      presence_penalty: 0.0
+      repetition_penalty: 1.0
+      chat_template_kwargs:
+        enable_thinking: true
+        preserve_thinking: true
+
+mcp_servers:
+  stub-fortify:
+    command: "python3"
+    args:
+      - "/opt/data/mcp-bridge.py"
+    env:
+      STUB_FINDINGS_URL: "http://stub-findings-mcp.remediation-pov.svc.cluster.local"
+      WORKSPACE_MCP_URL: "http://remote-edit-devws.remediation-pov.svc.cluster.local:8090/mcp"
+    enabled: true
+  workspace:
+    url: "http://remote-edit-devws.remediation-pov.svc.cluster.local:8090/mcp"
+    enabled: true
+
+terminal:
+  backend: "local"
+  cwd: "/opt/data/scratch"
+  timeout: 300
+
+display:
+  interface: "tui"
+
+platform_toolsets:
+  cli:
+    - stub-fortify
+    - workspace
+
+agent:
+  max_turns: 30
+  reasoning_effort: low
+  tool_use_enforcement: true
+  intent_ack_continuation: true
+  execution_guidance: true
+  coding_context: "off"
+  disabled_toolsets:
+    - file
+    - terminal
+
+compression:
+  enabled: true
+
+tools:
+  tool_search:
+    enabled: off

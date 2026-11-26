@@ -1,0 +1,249 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: remote-edit-devws
+  namespace: remediation-pov
+  labels:
+    test: remote-edit
+    app: remote-edit-devws
+spec:
+  selector:
+    controller.devfile.io/devworkspace_name: remote-edit-devws
+  ports:
+    - name: ssh
+      port: 2222
+      targetPort: 2222
+    - name: mcp
+      port: 8090
+      targetPort: 8090
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: remote-edit-hermes
+  namespace: remediation-pov
+  labels:
+    test: remote-edit
+    app: remote-edit-hermes
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: remote-edit-hermes
+  template:
+    metadata:
+      labels:
+        test: remote-edit
+        app: remote-edit-hermes
+    spec:
+      containers:
+        - name: hermes
+          image: docker.io/nousresearch/hermes-agent:v0.23.3@sha256:41468459379a943cf0a25a55589e230d244bd9f95b83cff5eca789470c892fac
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/bash", "/bootstrap/hermes-start.sh"]
+          ports:
+            - name: dashboard
+              containerPort: 9119
+          env:
+            - name: OPENAI_BASE_URL
+              value: http://qwen36-27b-openai.remediation-pov.svc.cluster.local/v1
+            - name: OPENAI_API_KEY
+              value: not-needed
+            - name: HERMES_CWD
+              value: /workspace/BenchmarkJava
+            - name: OPENROUTER_API_KEY
+              value: ""
+            - name: TERMINAL_ENV
+              value: ssh
+            - name: TERMINAL_SSH_HOST
+              value: remote-edit-devws.remediation-pov.svc.cluster.local
+            - name: TERMINAL_SSH_USER
+              value: default
+            - name: TERMINAL_SSH_PORT
+              value: "2222"
+            - name: TERMINAL_SSH_KEY
+              value: /opt/data/.ssh/id_ed25519
+          envFrom:
+            - secretRef:
+                name: hermes-dashboard-auth
+            - configMapRef:
+                name: hermes-env
+                optional: true
+          resources:
+            requests:
+              cpu: 250m
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              memory: 3Gi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 9119
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          volumeMounts:
+            - name: bootstrap
+              mountPath: /bootstrap
+            - name: sshkey
+              mountPath: /etc/remote-edit
+              readOnly: true
+            - name: data
+              mountPath: /opt/data
+      volumes:
+        - name: bootstrap
+          configMap:
+            name: remote-edit-hermes-bootstrap
+            defaultMode: 0555
+        - name: sshkey
+          secret:
+            secretName: remote-edit-ssh
+            defaultMode: 0444
+            items:
+              - key: id_ed25519
+                path: id_ed25519
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: remote-edit-hermes
+  namespace: remediation-pov
+  labels:
+    test: remote-edit
+    app: remote-edit-hermes
+spec:
+  selector:
+    app: remote-edit-hermes
+  ports:
+    - name: dashboard
+      port: 9119
+      targetPort: 9119
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: remote-edit-hermes
+  namespace: remediation-pov
+  labels:
+    test: remote-edit
+spec:
+  to:
+    kind: Service
+    name: remote-edit-hermes
+  port:
+    targetPort: dashboard
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: remote-edit-devws-ingress
+  namespace: remediation-pov
+  labels:
+    test: remote-edit
+spec:
+  podSelector:
+    matchLabels:
+      controller.devfile.io/devworkspace_name: remote-edit-devws
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: remote-edit-hermes
+      ports:
+        - protocol: TCP
+          port: 2222
+    - from:
+        - podSelector:
+            matchLabels:
+              app: remote-edit-hermes-b
+      ports:
+        - protocol: TCP
+          port: 8090
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: remote-edit-hermes-egress
+  namespace: remediation-pov
+  labels:
+    test: remote-edit
+spec:
+  podSelector:
+    matchLabels:
+      app: remote-edit-hermes
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+        - protocol: UDP
+          port: 5353
+        - protocol: TCP
+          port: 5353
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 80
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 8080
+    - to:
+        - podSelector:
+            matchLabels:
+              controller.devfile.io/devworkspace_name: remote-edit-devws
+      ports:
+        - protocol: TCP
+          port: 2222
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: remote-edit-stub-ingress
+  namespace: remediation-pov
+  labels:
+    test: remote-edit
+spec:
+  podSelector:
+    matchLabels:
+      app: stub-findings-mcp
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: remote-edit-hermes
+        - podSelector:
+            matchLabels:
+              app: remote-edit-hermes-b
+        - podSelector:
+            matchLabels:
+              controller.devfile.io/devworkspace_name: remote-edit-devws
+      ports:
+        - protocol: TCP
+          port: 8080

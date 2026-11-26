@@ -1,6 +1,6 @@
 # Agentic remediation demo script
 
-Customer-facing walkthrough (~15–18 min). Screenshots (if any) live under `docs/customer/screenshots/`.
+Customer-facing walkthrough, about 15 to 18 minutes. Screenshots are in the repository README.
 
 **Rule:** false positive first, library upgrade second, code fix third. The optional hand-back scene comes after the code fix and can be skipped. Never reverse that order.
 
@@ -8,7 +8,7 @@ Customer-facing walkthrough (~15–18 min). Screenshots (if any) live under `doc
 
 > “This is policy-gated remediation on Red Hat OpenShift AI: scanner findings come in over MCP, the agent decides true versus false positive from the code, and only then patches real vulnerabilities - verified by build and a rescan.”
 
-What is stubbed in this rehearsal vs the POV is listed in the repository README (“Lab vs POV”).
+What is stubbed in this rehearsal, and what the POV uses instead, is in the repository README under "Lab and POV".
 
 ## Scene 1 - Platform shape (1 min)
 

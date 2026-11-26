@@ -1,0 +1,214 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: remote-edit-hermes-b
+  namespace: remediation-pov
+  labels:
+    test: remote-edit
+    app: remote-edit-hermes-b
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: remote-edit-hermes-b
+  template:
+    metadata:
+      labels:
+        test: remote-edit
+        app: remote-edit-hermes-b
+    spec:
+      containers:
+        - name: hermes
+          image: docker.io/nousresearch/hermes-agent:v0.23.3@sha256:41468459379a943cf0a25a55589e230d244bd9f95b83cff5eca789470c892fac
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/bash", "/bootstrap/hermes-start-b.sh"]
+          ports:
+            - name: dashboard
+              containerPort: 9119
+          env:
+            - name: OPENAI_BASE_URL
+              value: http://qwen36-27b-openai.remediation-pov.svc.cluster.local/v1
+            - name: OPENAI_API_KEY
+              value: not-needed
+            - name: HERMES_CWD
+              value: /opt/data/scratch
+            - name: OPENROUTER_API_KEY
+              value: ""
+            - name: TERMINAL_ENV
+              value: local
+            - name: TERMINAL_CWD
+              value: /opt/data/scratch
+          envFrom:
+            - secretRef:
+                name: hermes-dashboard-auth
+            - configMapRef:
+                name: hermes-env
+                optional: true
+          resources:
+            requests:
+              cpu: 250m
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              memory: 3Gi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 9119
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          volumeMounts:
+            - name: bootstrap
+              mountPath: /bootstrap
+            - name: data
+              mountPath: /opt/data
+      volumes:
+        - name: bootstrap
+          configMap:
+            name: remote-edit-hermes-b-bootstrap
+            defaultMode: 0555
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: remote-edit-hermes-b
+  namespace: remediation-pov
+  labels:
+    test: remote-edit
+    app: remote-edit-hermes-b
+spec:
+  selector:
+    app: remote-edit-hermes-b
+  ports:
+    - name: dashboard
+      port: 9119
+      targetPort: 9119
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: remote-edit-hermes-b
+  namespace: remediation-pov
+  labels:
+    test: remote-edit
+spec:
+  to:
+    kind: Service
+    name: remote-edit-hermes-b
+  port:
+    targetPort: dashboard
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: remote-edit-devws-ingress
+  namespace: remediation-pov
+  labels:
+    test: remote-edit
+spec:
+  podSelector:
+    matchLabels:
+      controller.devfile.io/devworkspace_name: remote-edit-devws
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: remote-edit-hermes
+      ports:
+        - protocol: TCP
+          port: 2222
+    - from:
+        - podSelector:
+            matchLabels:
+              app: remote-edit-hermes-b
+      ports:
+        - protocol: TCP
+          port: 8090
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: remote-edit-hermes-b-egress
+  namespace: remediation-pov
+  labels:
+    test: remote-edit
+spec:
+  podSelector:
+    matchLabels:
+      app: remote-edit-hermes-b
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+        - protocol: UDP
+          port: 5353
+        - protocol: TCP
+          port: 5353
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 80
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 8080
+    - to:
+        - podSelector:
+            matchLabels:
+              controller.devfile.io/devworkspace_name: remote-edit-devws
+      ports:
+        - protocol: TCP
+          port: 8090
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: remote-edit-stub-ingress
+  namespace: remediation-pov
+  labels:
+    test: remote-edit
+spec:
+  podSelector:
+    matchLabels:
+      app: stub-findings-mcp
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: remote-edit-hermes
+        - podSelector:
+            matchLabels:
+              app: remote-edit-hermes-b
+        - podSelector:
+            matchLabels:
+              controller.devfile.io/devworkspace_name: remote-edit-devws
+      ports:
+        - protocol: TCP
+          port: 8080

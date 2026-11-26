@@ -1,6 +1,6 @@
 # Template for a one-node L40S pool (g6e.2xlarge, 1x NVIDIA L40S).
 # Copy to lab/machineset-l40s.yaml (gitignored) and fill placeholders from a
-# live worker MachineSet. See docs/internal/setup-runbook.md.
+# live worker MachineSet. Do not commit the filled copy.
 apiVersion: machine.openshift.io/v1beta1
 kind: MachineSet
 metadata:

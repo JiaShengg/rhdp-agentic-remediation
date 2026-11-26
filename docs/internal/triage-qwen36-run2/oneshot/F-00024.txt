@@ -1,7 +1,0 @@
-⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
-
-session_id: local-ba9171806a3fab9cc562394a08fde385b98d40b33a539aebbd698805db59e562
-Recorded. F-00024 is a **false positive**.
-
-**Reason:** The user input `param` is read at line 44 but never used in the SQL query. The query uses a parameterized `PreparedStatement` with `?`, and binds a hardcoded `"foo"` (not user input). No untrusted data flows into the SQL statement.
-exit=0

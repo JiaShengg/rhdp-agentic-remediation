@@ -1,0 +1,31 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: remediation-pov
+configMapGenerator:
+  - name: remote-edit-bootstrap
+    files:
+      - start-devws.sh
+      - ssh_server.py
+      - workspace_mcp.py
+  - name: remote-edit-hermes-bootstrap
+    files:
+      - hermes-start.sh
+      - mcp-bridge.py
+      - triage.md
+      - sqli-remediation.md
+      - config.yaml=hermes-config.yaml
+      - patch_coder_tool_json.py
+  - name: remote-edit-hermes-b-bootstrap
+    files:
+      - hermes-start-b.sh
+      - mcp-bridge.py
+      - triage.md
+      - sqli-remediation-b.md
+      - config.yaml=hermes-config-b.yaml
+      - patch_coder_tool_json.py
+generatorOptions:
+  disableNameSuffixHash: true
+resources:
+  - devworkspace.yaml
+  - hermes-a.yaml
+  - hermes-b.yaml

@@ -1,7 +1,0 @@
-⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
-
-session_id: local-7b52fb1bdcca1eeddd3be887368b0902b0fe2bbb1bdc986b5392f40011faae6b
-Recorded **FP** for F-00001.
-
-Line 40 (`userCookie.setPath(request.getRequestURI())`) sets an HTTP cookie's URL scope, not a file system path — no path traversal there. The real vulnerability is at line 71-72 where unsanitized user input flows into `FileInputStream`, but that's a different location the scanner didn't flag.
-exit=0

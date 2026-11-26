@@ -1,5 +1,0 @@
-⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
-
-session_id: local-88f34c395f830a44e230c5d67918234880dcd03bd2eef2545f922f32797bb371
-Decision recorded for finding F-00014: True Positive. Reason: Indicates a significant XSS vulnerability.
-exit=0

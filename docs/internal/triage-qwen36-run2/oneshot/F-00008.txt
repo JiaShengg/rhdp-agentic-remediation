@@ -1,5 +1,0 @@
-⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
-
-session_id: local-22bc60c9ff2ed7e880db57daf9a91695ad4ab469705dce648a8340f6ac8b56b9
-Recorded. F-00008 is a **true positive**: user-controlled header input is concatenated directly into a SQL call string and executed without any sanitization or parameterization.
-exit=0

@@ -1,5 +1,0 @@
-⚠ install out of sync (pnpm: not installed or outdated) — this docker-managed install must rebuild the artifact to fix
-
-session_id: local-c1da69f3e7cd08417bf7952259e650d3ea1810c11fd28f23a90ed27a869694a6
-Recorded **FP** for F-00024. The code uses a parameterized `PreparedStatement` with `?` placeholders, and the bound value is the literal `"foo"` — the user-controlled `param` variable is never used in the query. No SQL injection vulnerability exists.
-exit=0

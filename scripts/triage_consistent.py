@@ -17,7 +17,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG = ROOT / "lab/stub-findings-mcp/findings.public.json"
-NS = os.environ.get("NS", "remediation-lab")
+NS = os.environ.get("NS", "remediation-pov")
 SEED = "7d94047"
 MAX_TURNS = os.environ.get("MAX_TURNS", "12")
 
