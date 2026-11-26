@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
-"""Stdio MCP bridge → stub-findings-mcp REST.
+"""Stdio Model Context Protocol bridge to the stub findings service.
 
-Agent tools only — no ground-truth / answer-key access.
+Agent tools only. No ground-truth or answer-key access.
+
+WORKSPACE_MCP_URL selects the developer workspace server and hides
+run_build, run_recipe, and request_rescan. REMOTE_EDIT_SSH_HOST selects
+an SSH read of the same workspace. With neither variable set, request_rescan
+reads a local file when that file exists.
 """
 
 from __future__ import annotations
@@ -124,18 +129,124 @@ TOOLS = [
 ]
 
 
+def _mcp_post(url: str, payload: dict | None, session: str, timeout: int = 30) -> tuple[int, str, str]:
+    data = None if payload is None else json.dumps(payload).encode()
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json, text/event-stream",
+    }
+    if session:
+        headers["Mcp-Session-Id"] = session
+    req = urllib.request.Request(url, data=data, method="POST", headers=headers)
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            sid = resp.headers.get("Mcp-Session-Id", session)
+            return resp.status, sid, resp.read().decode()
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode() if exc.fp else str(exc)
+        raise RuntimeError(f"workspace mcp {exc.code} {detail}") from exc
+
+
+def read_via_workspace_mcp(rel: str) -> str:
+    """Read through the workspace server so the rescan sees the developer pod."""
+    url = os.environ["WORKSPACE_MCP_URL"].rstrip("/")
+    _, session, _raw = _mcp_post(
+        url,
+        {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "initialize",
+            "params": {
+                "protocolVersion": "2025-03-26",
+                "capabilities": {},
+                "clientInfo": {"name": "stub-bridge", "version": "0.1"},
+            },
+        },
+        "",
+    )
+    _mcp_post(url, {"jsonrpc": "2.0", "method": "notifications/initialized"}, session)
+    _, _, raw = _mcp_post(
+        url,
+        {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "tools/call",
+            "params": {"name": "read_file", "arguments": {"path": rel}},
+        },
+        session,
+    )
+    msg = json.loads(raw)
+    if msg.get("error"):
+        raise RuntimeError(msg["error"])
+    result = msg.get("result") or {}
+    if result.get("isError"):
+        text = ""
+        for block in result.get("content") or []:
+            text += block.get("text") or ""
+        raise RuntimeError(text or "workspace read failed")
+    parts = []
+    for block in result.get("content") or []:
+        parts.append(block.get("text") or "")
+    return "".join(parts)
+
+
+def read_workspace_file(rel: str) -> str:
+    """Read a workspace file over SSH or through the workspace server."""
+    if rel.startswith("/") or ".." in Path(rel).parts:
+        raise ValueError("refusing workspace path")
+    if os.environ.get("WORKSPACE_MCP_URL"):
+        return read_via_workspace_mcp(rel)
+    host = os.environ.get("REMOTE_EDIT_SSH_HOST", "")
+    if not host:
+        path = WORKSPACE / rel
+        return path.read_text(errors="replace") if path.exists() else ""
+    import shlex
+    import subprocess
+
+    remote = "/workspace/BenchmarkJava/" + rel
+    cmd = [
+        "ssh",
+        "-i",
+        os.environ.get("REMOTE_EDIT_SSH_KEY", "/etc/remote-edit/id_ed25519"),
+        "-p",
+        os.environ.get("REMOTE_EDIT_SSH_PORT", "2222"),
+        "-o",
+        "BatchMode=yes",
+        "-o",
+        "StrictHostKeyChecking=accept-new",
+        f"{os.environ.get('REMOTE_EDIT_SSH_USER', 'default')}@{host}",
+        f"cat {shlex.quote(remote)}",
+    ]
+    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+    if proc.returncode != 0:
+        raise RuntimeError(proc.stderr.strip() or "remote read failed")
+    return proc.stdout
+
+
+def active_tools() -> list:
+    """Hide the build-runner tools when the workspace server owns compile and rescan."""
+    if os.environ.get("WORKSPACE_MCP_URL"):
+        hidden = ("run_build", "run_recipe", "request_rescan")
+        return [tool for tool in TOOLS if tool["name"] not in hidden]
+    return TOOLS
+
+
 def call_tool(name: str, arguments: dict) -> dict:
     if name == "list_findings":
         return http_json("GET", "/findings")
     if name == "get_finding":
         return http_json("GET", f"/findings/{arguments['id']}")
+    if name in ("run_build", "run_recipe", "request_rescan") and os.environ.get("WORKSPACE_MCP_URL"):
+        raise ValueError("that tool is not on this path")
     if name == "request_rescan":
         body = dict(arguments or {})
         fid = body.get("id")
         if fid:
             finding = http_json("GET", f"/findings/{fid}", internal=True)
             rel = finding.get("file")
-            if rel:
+            if rel and (os.environ.get("WORKSPACE_MCP_URL") or os.environ.get("REMOTE_EDIT_SSH_HOST")):
+                body["file_content"] = read_workspace_file(rel)
+            elif rel:
                 path = WORKSPACE / rel
                 if path.exists():
                     body["file_content"] = path.read_text(errors="replace")
@@ -184,7 +295,7 @@ def main() -> None:
         elif method == "notifications/initialized":
             continue
         elif method == "tools/list":
-            respond(msg_id, {"tools": TOOLS})
+            respond(msg_id, {"tools": active_tools()})
         elif method == "tools/call":
             name = params.get("name")
             args = params.get("arguments") or {}

@@ -4,8 +4,9 @@
 Idempotent. Finds the first JSON object with {"name", "arguments"} anywhere in the
 assistant content, using json.raw_decode so nested arguments parse correctly.
 
-Allowlist only (stub MCP tools). Any other name is logged and dropped — never
-executed. Native Hermes file/terminal tool_calls (not text stubs) are untouched.
+Allowlist only (stub Model Context Protocol tools). Any other name is logged
+and dropped, and is never executed. Native Hermes file and terminal tool_calls
+(not text stubs) are untouched.
 """
 from __future__ import annotations
 

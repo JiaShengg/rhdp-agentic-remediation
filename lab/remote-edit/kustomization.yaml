@@ -10,19 +10,19 @@ configMapGenerator:
   - name: remote-edit-hermes-bootstrap
     files:
       - hermes-start.sh
-      - mcp-bridge.py
+      - mcp-bridge.py=../hermes/mcp-bridge.py
       - triage.md
       - sqli-remediation.md
       - config.yaml=hermes-config.yaml
-      - patch_coder_tool_json.py
+      - patch_coder_tool_json.py=../hermes/patch_coder_tool_json.py
   - name: remote-edit-hermes-b-bootstrap
     files:
       - hermes-start-b.sh
-      - mcp-bridge.py
+      - mcp-bridge.py=../hermes/mcp-bridge.py
       - triage.md
       - sqli-remediation-b.md
       - config.yaml=hermes-config-b.yaml
-      - patch_coder_tool_json.py
+      - patch_coder_tool_json.py=../hermes/patch_coder_tool_json.py
 generatorOptions:
   disableNameSuffixHash: true
 resources:
