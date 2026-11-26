@@ -35,6 +35,25 @@ def _load():
 mod = _load()
 
 
+class SharedBridgeCopyTests(unittest.TestCase):
+    def test_remote_edit_copies_match_hermes(self) -> None:
+        pairs = [
+            (
+                "lab/hermes/mcp-bridge.py",
+                "lab/remote-edit/mcp-bridge-remote-edit.py",
+            ),
+            (
+                "lab/hermes/patch_coder_tool_json.py",
+                "lab/remote-edit/patch_coder_tool_json-remote-edit.py",
+            ),
+        ]
+        for shared_name, copy_name in pairs:
+            shared = (ROOT / shared_name).read_text().splitlines()
+            copy = (ROOT / copy_name).read_text().splitlines()
+            self.assertTrue(copy[1].startswith("# Same program as " + shared_name))
+            self.assertEqual([copy[0], *copy[2:]], shared)
+
+
 class WorkspaceMcpTests(unittest.TestCase):
     def setUp(self) -> None:
         self.tmp = tempfile.TemporaryDirectory()
